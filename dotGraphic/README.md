@@ -1,8 +1,8 @@
 # 点数图画法(算法)
 
 ## 收盘价
-<img src="https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/close01_p30.png" width="200" height="400" alt="p1"/><br/>
-<img src="https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/close02_p31.png" width="200" height="400" alt="p2"/><br/>
+<img src="https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/close01_p30.png" width="400" height="200" alt="p1"/><br/>
+<img src="https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/close02_p31.png" width="400" height="200" alt="p2"/><br/>
 
 ## 高低价
 ![image](https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/highLow01_p31.png)
