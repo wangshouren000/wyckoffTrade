@@ -9,6 +9,8 @@
 <img src="https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/highLow02_p32.png" width="400" height="200" alt="p22"/><br/>
 <img src="https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/highLow03_p32.png" width="400" height="200" alt="p23"/><br/>
 
+截图来自《点数图交易法》，貌似其他书籍上未找到详细的计算方法，点数图的使用，参考孟洪涛的《擒庄秘籍》
+
 ## 一格区间标准
 ![image](https://github.com/wangshouren000/WyckoffTrade/blob/master/picture/dotArea.png)
 
