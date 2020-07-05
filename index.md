@@ -1,0 +1,13 @@
+# 竹线图指标
+    C1:=C;
+    O1:=IF(C>O,C*0.9999,IF(C<O,C*1.0001,C));
+    DRAWKLINE(HIGH,O1,LOW,C1);
+# 波形图(供需指数)
+    标记:=IF(C>REF(C,1),1,-1);
+    上总量1:STICKLINE(标记=1 AND REF(标记,1)=1,0,SUM(VOL,BARSLAST(标记=-1)+1)-REF(VOL,BARSLAST(标记=-1)),3,0),COLORLIRED;
+    上总量2:STICKLINE(标记=1 AND REF(标记,1)=-1,0,VOL,3,0),COLORLIRED;
+    下总量3:STICKLINE(标记=-1 AND REF(标记,1)=-1,0,SUM(VOL,BARSLAST(标记=1)+1)-REF(VOL,BARSLAST(标记=1)),3,0),COLORLIBLUE;
+    下总量4:STICKLINE(标记=-1 AND REF(标记,1)=1,0,VOL,3,0),COLORLIBLUE;
+    DRAWICON(标记=1,H*1.05,1);
+    DRAWICON(标记=-1,L*0.95,2);
+    DRAWICON(标记=0,L*0.95,41);
