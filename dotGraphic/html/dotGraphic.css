@@ -1,0 +1,139 @@
+ *{
+     margin-left: 1px;
+     margin-right: 1px;
+ }
+ body {
+     width: 99.9%;
+     overflow-x: hidden;
+ }
+
+ p {
+     font-size: 10px;
+     color: red;
+ }
+
+ /*备注：两个canvas，dotGraphic绘点数图，背景色淡黄，处于底层， tooltip展示悬停效果，处于顶层，背景色必须是透明。二者大小完全一样，重叠*/
+ canvas {
+     border: 0px solid black;
+     display: block;
+     background: transparent;
+     width: 900px;
+     height: 500px;
+     position: absolute;
+     /*background-color: rgb(193, 230, 198);*/
+
+ }
+
+ #dotGraphic {
+     /*position: relative;*/
+     z-index: 1;
+ }
+
+ #left {
+     width: 17%;
+     height: 600px;
+     float: left;
+     border: 1px solid gray;
+     margin-left: 5px;
+ }
+
+ #right {
+     width: 82%;
+     height: 600px;
+     border: 1px solid gray;
+     float: left;
+ }
+
+ #search-input,
+ #cycle,
+ #latticeValue,
+ #beginDate,
+ #endDate {
+     width: 60%;
+     /*border: 2px;*/
+ }
+
+ label,a {
+     margin-left: 5%;
+     font-size: 12pt;
+ }
+
+ button {
+     margin-left: 25%;
+     height: 4%;
+     margin-top: 5%;
+     width: 60%;
+ }
+
+ ul {
+     list-style: none;
+ }
+
+ #tab {
+     /*width: 498px;
+        height: 130px;*/
+     /*border: 1px solid #ddd;*/
+     /*box-shadow: 0 0 2px #ddd;*/
+     /*margin: 100px 0 0 100px;*/
+     /*处理超出的内容*/
+     /*overflow: hidden;*/
+     z-index: 0;
+ }
+
+ /*选项卡的头部*/
+ #tab-header {
+     background-color: #F7F7F7;
+     height: 16px;
+     text-align: center;
+     position: relative;
+     width: 99.9%;
+ }
+
+ #tab-header ul {
+     width: 200px;
+     padding-left: 70%;
+ }
+
+ #tab-header ul li {
+     float: left;
+     height: 15px;
+     width: 98px;
+     /*padding: 0 1px;
+     border-bottom: 1px solid #dddddd;*/
+     font-size: 8pt;
+ }
+
+ #tab-header ul li.selected {
+     background-color: white;
+     font-weight: bolder;
+     border-bottom: 0;
+     color: orangered;
+
+     /*border-left: 1px solid #dddddd;
+     border-right: 1px solid #dddddd;
+     padding: 0;*/
+
+ }
+
+ #tab-header ul li:hover {
+     color: orangered;
+ }
+
+ #tab-content {
+     position: relative;
+ }
+
+ /*主要内容*/
+ #tab-content .dom {
+     display: none;
+ }
+
+ #tab-content .dom ul li {
+     float: left;
+     /*background-color: red;*/
+     width: 225px;
+ }
+
+ #tab-content .dom ul li a:hover {
+     color: orange;
+ }

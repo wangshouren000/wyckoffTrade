@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>威科夫点数图</title>
+    <link rel="" href="">
+    <script type="text/javascript" src="jquery-1.8.3.js"></script>
+    <script type="text/javascript" src="dotGraphic.js"></script>
+    <script type="text/javascript" src="stock_list.js"></script>
+    <link href="dotGraphic.css" type="text/css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="left">
+        <strong>威科夫操盘工具</strong>
+        <input type="file" webkitdirectory directory multiple name="file" id="filePicker" onchange="loadFileList()" accept="*" value="加载离线股票数据" /><br /> <br />
+        <label id="offlinel"><input id="offline" name="dataSource" type="radio" value="0" onchange="
+            var offline = document.getElementById('offline');
+            var onlinel = document.getElementById('onlinel');
+            var offlinel = document.getElementById('offlinel');
+            if(offline.checked)
+            {
+                offlinel.style.color='red';
+                onlinel.style.color='black';
+            }
+        " />离线</label>
+        <label id="onlinel" style="color:red"><input id="online" checked="checked" name="dataSource" type="radio" value="1" onchange="
+            var online = document.getElementById('online');
+            var onlinel = document.getElementById('onlinel');
+            var offlinel = document.getElementById('offlinel');
+            if(online.checked)
+            {
+                onlinel.style.color='red';
+                offlinel.style.color='black';
+            }
+        " />在线</label> <br /><br />
+        <a>周期: </a>
+        <input id="cycle" type="text" list="cycle_list"  name="cycle" value="日" onchange="
+        var code = document.getElementById('search-input').value;
+        if (code == '' || code == '请输入股票代码')
+        {
+            return;
+        }
+        else
+        {
+            generate();
+        }" onFocus="if (value !=''){value =''}" autocomplete="off" />
+        <datalist id="cycle_list">
+            <option label="日" value="日" id="day" />
+            <option label="5分钟" value="5分钟" id="fmin" />
+            <option label="30分钟" value="30分钟" id="tmin" />
+        </datalist><br /> <br />
+        <label><input id="no" name="Rehabilitation" type="radio" value="0" />不复权</label>
+        <label><input id="before" name="Rehabilitation" type="radio" checked="checked" value="1" />前复权</label> <br />
+        <label><input id="after" name="Rehabilitation" type="radio" value="0" />后复权</label> <br />
+        </form> <br />
+        <a>股票：</a>
+        <input id="search-input" type="text" list="stock_list" onchange="
+        document.getElementById('latticeValue').value=0;
+        generate();
+        " name="ss" id="stocklist" value="" onFocus="if (value !=''){value =''}" onBlur="if (value ==''){value='请输入股票代码'}" autocomplete="off" />
+        <datalist id="stock_list">
+        </datalist><br />
+        <a>格值：</a>
+        <input type="number" id="latticeValue" min="0.01" max="10000" step="0.01" /><br /><br />
+        <!--form action="" method="get">类型：<br /-->
+        <label><input id="oneDot" name="dotInterval" type="radio" checked="checked" value="1" />单点图</label>
+        <label><input id="threeDot" name="dotInterval" type="radio" value="3" />三点图</label><br />
+        <label><input id="fiveDot" name="dotInterval" type="radio" value="5" />五点图</label>
+        <!--/form-->
+        <!--form action="" method="get">构建：--><br /><br />
+        <label><input id="close" name="buildType" type="radio" value="1" />收盘价</label>
+        <label><input id="highLow" name="buildType" type="radio" checked="checked" value="0" />高低价</label> <br /><br />
+        <!--/form> <br /-->
+        <a>开始：</a><input type="date" id="beginDate" /><br />
+        <a>结束：</a><input type="date" id="endDate" /><br />
+        <!--form action="" method="get"><br /--><br />
+        <label><input id="kline_g" name="lineType" type="radio" checked="checked" value="1" />K线图</label>
+        <label><input id="bamboo_g" name="lineType" type="radio" value="0" />竹线图</label> <br />
+        <button type="button" onclick="generate()">生成点数图</button><br />
+        <p>1、请先选择数据文件的根目录<br />2、下载数据请执行根目录下的updateData.sh<p>
+    </div>
+    <div id="right" style="align:center;overflow:auto">
+        <div id="tab">
+            <!--选项的头部-->
+            <div id="tab-header">
+                <ul>
+                    <li class="selected" id="k_wave_tab">K线+波形图</li>
+                    <li id="dot_tab">点数图</li>
+                </ul>
+            </div>
+            <!--主要内容-->
+            <div id="tab-content">
+                <div class="dom" id="dom" style="display: block;">
+                    <ul>
+                        <li>
+                            <canvas id="kline"></canvas>
+                        </li>
+                    </ul>
+                </div>
+                <div id="kline_tip"></div>
+                <div class="dom" id="dom">
+                    <ul>
+                        <li>
+                            <canvas id="dotGraphic"></canvas>
+                        </li>
+                    </ul>
+                </div>
+                <div id="dotGraphic_tip"></div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+    window.onload = function()
+    {
+        var date = new Date();
+        var y1 = date.getFullYear();
+        var m1 = (Array(2).join('0') + (date.getMonth() + 1)).slice(-2);
+        var d1 = (Array(2).join('0') + date.getDate()).slice(-2);
+        date.setDate(date.getDate() - 365);
+        var y2 = date.getFullYear();
+        var m2 = (Array(2).join('0') + (date.getMonth() + 1)).slice(-2);
+        var d2 = (Array(2).join('0') + date.getDate()).slice(-2);
+        beginDate = y2 + "-" + m2 + "-" + d2;
+        endDate = y1 + "-" + m1 + "-" + d1;
+        document.getElementById("beginDate").value = beginDate;
+        document.getElementById("endDate").value = endDate;
+
+        TabInit();
+        //var //filePicker=document.getElementById("filePicker");
+        //filePicker.click();
+        loadStockList();
+    }
+
+    function TabInit()
+    {
+        // 拿到所有的标题(li标签) 和 标题对应的内容(div)
+        var titles = document.getElementById('tab-header').getElementsByTagName('li')
+        var divs = document.getElementById('tab-content').getElementsByClassName('dom');
+        // 判断
+        if (titles.length != divs.length) return;
+        // 遍历
+        for (var i = 0; i < titles.length; i++)
+        {
+            // 取出li标签
+            var li = titles[i];
+            li.id = i;
+
+            //        console.log(li);
+            // 监听鼠标的移动
+            li.onclick = function()
+            {
+                for (var j = 0; j < titles.length; j++)
+                {
+                    titles[j].className = '';
+                    divs[j].style.display = 'none';
+                }
+                this.className = 'selected';
+                divs[this.id].style.display = 'block';
+                divs[this.id].style.backgroundcolor = "white";
+                var style;
+                if (this.id == 0)
+                {
+                    style = document.getElementById("kline").style;
+                }
+                else
+                {
+                    style = document.getElementById("dotGraphic").style;
+                }
+                var ul = document.getElementById("tab-header").getElementsByTagName('ul')[0];
+                var paddingLeft = style.width.replace('px', '');
+                paddingLeft = (parseInt(paddingLeft) - 150) + "px"
+                ul.style.paddingLeft = paddingLeft;
+                scrollBottomAndRightTag(document.getElementById("right"));
+
+            }
+        }
+    }
+    </script>
+</body>
+
+</html>
