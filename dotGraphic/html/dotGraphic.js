@@ -1,18 +1,28 @@
 /*数据结构：
     日期,股票代码,名称,收盘价,最高价,最低价,开盘价,前收盘,成交量,成交金额
-  在线数据来源:
+  在线数据来源1:
         新浪："http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=sh000001&scale=5&ma=no&datalen=1023"
         (day,open,high,low,close,volume)
     可以获取5、10、30、60、240分钟数据，最多可获取1023个周期
   离线数据来源：
         网易：http://quotes.money.163.com/service/chddata.html?code=0000001&start=20000101&end=20200101&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP
         获取日线数据,数据可能会滞后一天
+在线数据来源2:
+    东方财富:
+    http://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery&secid=1.603917&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58&klt=101&fqt=0&beg=20200710&end=20200716
 
+    secid=1.603917
+          sh 1 sz 0 +code
+    fields1=
+    "code","market","name","decimal","dktotal","klines"
 
-作者：苹果上的小豌豆
-链接：https://www.jianshu.com/p/2f45fcb44771
-来源：简书
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+    fields2= date,open,close,high,low,,volume,amount
+    klt=
+        5 5f
+        15 15f
+        101 day
+    fqt=
+        0 不复权 1 前复权 2 后复权
 */
 var stockArray = {};
 var name;
@@ -40,6 +50,10 @@ var maxSpace = 25;
 var space = minSpace;
 var spaceDot = space;
 var spaceK = space;
+var isOneDotRebuild = true;
+//复权 0 不 1 前 2 后
+var rehabilitation = 0;
+var dataSource = "新浪";
 //存放点的信息
 function SetTable(x, y)
 {
@@ -58,13 +72,14 @@ function SetTable(x, y)
 //画点数图
 function DrawPointAndFigure(returnValue)
 {
-    var offsetX = 2;
+    var offsetX = 3;
     var offsetY = 2;
 
     //索引后面偏移量
 
     var offsetXL = 8;
     var offsetYL = 6;
+    var dateIndex = 2;
     //初始化
     {
         //清理
@@ -91,7 +106,7 @@ function DrawPointAndFigure(returnValue)
         }
         spaceDot = space;
         canvas.width = space * (xIndex + offsetXL);
-        canvas.height = space * (yIndex + offsetYL);
+        canvas.height = space * (yIndex + offsetYL + dateIndex);
         table = SetTable(xIndex, yIndex);
         var offsetXSpace = offsetX * space;
         var offsetYSpace = offsetY * space;
@@ -110,15 +125,15 @@ function DrawPointAndFigure(returnValue)
         }
         //0点
         context.beginPath();
-        context.arc(offsetXSpace, offsetYSpace, 5, 0, 2 * Math.PI);
-        context.fillStyle = "yellow";
+        context.arc(offsetXSpace, offsetYSpace, 2, 0, 2 * Math.PI);
+        context.fillStyle = "black";
         context.fill();
         context.stroke();
     }
 
     //绘制水平方向的网格线
     //线条比格子多1,且加入上面一格刻度，下面两格刻度
-    for (var y = 0; y <= yIndex - offsetY; y++)
+    for (var y = 0; y < yIndex - offsetY; y++)
     {
         //开启路径
         context.beginPath()
@@ -128,7 +143,7 @@ function DrawPointAndFigure(returnValue)
         context.stroke();
 
         context.save();
-        context.fillStyle = 'red'
+        context.fillStyle = 'OrangeRed'
         context.font = 'bold 10px 微软雅黑'
         context.textBaseline = 'right';
         //设置文本的垂直对齐方式
@@ -137,10 +152,11 @@ function DrawPointAndFigure(returnValue)
         //标垂直刻度
         //注意：网格是从前偏移量的位置开始画的,所以最后列也是同等位移
         //offsetXSpace offsetYSpace
-        var str = (Math.round(returnValue.stockInfo.minPrice, 2) + (yIndex - y - offsetY) * latticeValue).toFixed(2);
+
+        var str = (returnValue.stockInfo.maxPrice - y * latticeValue).toFixed(2);
         context.fillText(str, offsetXSpace - space / 2, y * space + offsetYSpace);
 
-        context.fillText(str, space * xIndex + space * 3, y * space + offsetYSpace);
+        context.fillText(str, space * xIndex + space * 4, y * space + offsetYSpace);
     }
     //加两行 放日期
     // context.beginPath()
@@ -149,8 +165,8 @@ function DrawPointAndFigure(returnValue)
     context.stroke();
 
     context.beginPath()
-    context.moveTo(offsetXSpace, space * yIndex + space * 2)
-    context.lineTo(space * xIndex + space, space * yIndex + space * 2)
+    context.moveTo(offsetXSpace, space * yIndex + space * dateIndex)
+    context.lineTo(space * xIndex + space, space * yIndex + space * dateIndex)
     context.stroke();
 
     //绘制垂直方向的网格线
@@ -160,18 +176,18 @@ function DrawPointAndFigure(returnValue)
         //开启路径
         context.beginPath()
         context.moveTo(offsetXSpace + x * space, offsetYSpace)
-        context.lineTo(offsetXSpace + x * space, space * yIndex + space * 2)
+        context.lineTo(offsetXSpace + x * space, space * yIndex + space * dateIndex)
         context.stroke()
 
         //标顶部水平刻度
         context.save();
-        context.fillStyle = 'black'
+        context.fillStyle = 'green'
         context.font = 'bold 6px 微软雅黑'
         context.textBaseline = 'bottom';
         //设置文本的垂直对齐方式
         context.textAlign = 'center';
         var str = x;
-        context.fillText(str, offsetXSpace + space * x, offsetYSpace - space / 2);
+        context.fillText(str, offsetXSpace + space * x - space / 2, offsetYSpace - space / 2);
         context.restore();
     }
     //填充OX
@@ -203,7 +219,7 @@ function DrawPointAndFigure(returnValue)
                 context.fillStyle = 'lightgray';
                 context.fillRect(px - space / 2, py - space / 2, space, space);
             }
-            context.fillStyle = 'red';
+            context.fillStyle = 'OrangeRed';
             context.fillText("X", px, py);
         }
         else
@@ -215,7 +231,7 @@ function DrawPointAndFigure(returnValue)
                 context.fillStyle = 'lightgray';
                 context.fillRect(px - space / 2, py - space / 2, space, space);
             }
-            context.fillStyle = 'blue';
+            context.fillStyle = 'SlateBlue';
             context.fillText("O", px, py);
         }
 
@@ -239,8 +255,8 @@ function DrawPointAndFigure(returnValue)
             //month = date.substring(2, 4);
             context.font = 'bold 10px 微软雅黑';
             //context.fillText(month, space * x + space / 2, space * yIndex + space * 3 / 2);
-            context.fillStyle = 'black';
-            context.translate(space * x + space / 2, space * yIndex + space * 0.9);
+            context.fillStyle = 'green';
+            context.translate(space * x + space / 2, space * yIndex + space * 0.5);
             context.rotate(90 * Math.PI / 180);
             context.fillText(date, 0, 0);
             context.restore();
@@ -258,20 +274,19 @@ function DrawPointAndFigure(returnValue)
     // context.fillText("月", space * xIndex + space / 2, space * yIndex + space / 2);
     // context.fillText("年", space * xIndex + space / 2, space * yIndex + space * 3 / 2);
 
-    //标记 code name 最新日期
+    // 最新日期
+    context.font = 'bold 12px 微软雅黑';
     context.textAlign = "left"
-    context.fillStyle = 'blue';
-    context.fillText("最新日期:" + dotValueList[0].datas[0].date + "    " +
-        "[" + returnValue.stockInfo.code + "]" + returnValue.stockInfo.name, space * xIndex - space * 6, space * yIndex + space * 3);
-
-    context.fillText("最低价:" + returnValue.stockInfo.minPrice + "    " + "单格值:" + latticeValue, space * xIndex - space * 6, space * yIndex + space * 4);
+    context.fillStyle = 'green';
+    var str1 = "最新日期:" + dotValueList[0].datas[0].date + "    " + "[" + returnValue.stockInfo.code + "]" + returnValue.stockInfo.name;
+    //计算文字宽度
+    var strWhith = context.measureText(str1).width;
+    context.fillText(str1, space * xIndex - strWhith, space * yIndex + space * (dateIndex + 1));
+    var str2 = "最低价:" + returnValue.stockInfo.minPrice + "    " + "单格值:" + latticeValue;
+    context.fillText(str2, space * xIndex - strWhith, space * yIndex + space * (dateIndex + 2));
     var rate = (latticeValue * 100 / returnValue.stockInfo.maxPrice).toFixed(2) + "%~" + parseFloat(latticeValue * 100 / returnValue.stockInfo.minPrice).toFixed(2) + "%";
-
-    context.fillText("最高价:" + returnValue.stockInfo.maxPrice + "    格幅:" + rate, space * xIndex - space * 6, space * yIndex + space * 5);
-    context.fillStyle = 'red';
-
-    context.fillStyle = 'blue';
-
+    var str3 = "最高价:" + returnValue.stockInfo.maxPrice + "    格幅:" + rate;
+    context.fillText(str3, space * xIndex - strWhith, space * yIndex + space * (dateIndex + 3));
     context.restore();
 }
 
@@ -335,7 +350,7 @@ function DrawKLine(curList, stockInfo)
 
         //标刻度
         contextK.save();
-        contextK.fillStyle = 'red'
+        contextK.fillStyle = 'OrangeRed'
         contextK.font = 'bold 10px 微软雅黑'
         contextK.textBaseline = 'right';
         //设置文本的垂直对齐方式
@@ -379,7 +394,11 @@ function DrawKLine(curList, stockInfo)
         contextK.fillText(" 成交量", spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space / 2);
         contextK.fillText(" 波形图", spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space / 2);
         // code name 
-        contextK.fillText(stockInfo.code + " " + stockInfo.name, spaceX * xIndex * 0.9, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + space * 1.5);
+        var str1 = stockInfo.code + " " + stockInfo.name;
+        var strWhith = context.measureText(str1).width;
+
+        contextK.fillText(str1, spaceX * xIndex - strWhith * 2, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + space * 1.5);
+        contextK.fillText("周期:" + cycle, spaceX * xIndex - strWhith * 2, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + space * 2.5);
         //波形图行
         contextK.beginPath()
         contextK.moveTo(offsetXSpace, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space)
@@ -434,13 +453,13 @@ function DrawKLine(curList, stockInfo)
         var endpyHL = ((yIndex - parseFloat(item.high) / parseFloat(latticeValue) + stockInfo.startIndex) * space);
         if (startpy > endpy)
         {
-            contextK.fillStyle = 'red';
-            contextK.strokeStyle = 'red';
+            contextK.fillStyle = 'OrangeRed';
+            contextK.strokeStyle = 'OrangeRed';
         }
         else
         {
-            contextK.fillStyle = 'blue';
-            contextK.strokeStyle = 'blue';
+            contextK.fillStyle = 'SlateBlue';
+            contextK.strokeStyle = 'SlateBlue';
         }
         var pyheight = endpy - startpy;
         if (Math.abs(pyheight) < 1)
@@ -469,8 +488,8 @@ function DrawKLine(curList, stockInfo)
             }
             else
             {
-                contextK.fillStyle = 'MediumSlateBlue';
-                contextK.strokeStyle = 'MediumSlateBlue';
+                contextK.fillStyle = 'SlateBlue';
+                contextK.strokeStyle = 'SlateBlue';
             }
             contextK.lineWidth = lineWidth;
             contextK.fillRect(startpx, endpy, spaceX * 0.8, lineWidth);
@@ -484,7 +503,7 @@ function DrawKLine(curList, stockInfo)
         if (i % 20 == 0)
         {
             //日期 旋转
-            contextK.fillStyle = "black"
+            contextK.fillStyle = "green"
             contextK.font = 'bold 12px 微软雅黑';
             //translate 转换原点 这里一般填要转换点的位置
             //rotate 转换角度
@@ -523,11 +542,11 @@ function DrawKLine(curList, stockInfo)
         var pyheight = endpy - startpy;
         if (item.close > item.open)
         {
-            contextK.fillStyle = 'red';
+            contextK.fillStyle = 'OrangeRed';
         }
         else
         {
-            contextK.fillStyle = 'blue';
+            contextK.fillStyle = 'SlateBlue';
         }
         if (isKline)
         {
@@ -542,7 +561,7 @@ function DrawKLine(curList, stockInfo)
             }
             else
             {
-                contextK.fillStyle = 'MediumSlateBlue';
+                contextK.fillStyle = 'SlateBlue';
             }
             contextK.fillRect(startpx + 0.399 * spaceX, startpy, lineWidth, pyheight);
         }
@@ -604,7 +623,7 @@ function DrawKLine(curList, stockInfo)
         }
         else
         {
-            contextK.fillStyle = 'MediumSlateBlue';
+            contextK.fillStyle = 'SlateBlue';
         }
         if (isKline)
         {
@@ -679,7 +698,7 @@ function CalLatticeValue(basePrice)
     }
     else
     {
-        return parseInt(basePrice / 50);
+        return parseInt(parseInt(basePrice * 0.02) / 10) * 10 + 10;
     }
 }
 
@@ -699,7 +718,7 @@ function getGridIndexCurrent(stockInfo, curPrice, IsPreUp)
 function CalculateOneDotGraphic(stockInfo, dataList)
 {
     var dotValueList = [];
-    dataList.reverse();
+    //dataList.reverse();
     var status = true;
     var curPrice = 0;
     if (stockInfo.isClose)
@@ -781,10 +800,20 @@ function CalculateOneDotGraphic(stockInfo, dataList)
                 if (preDot.position.y - y >= stockInfo.dotInterval)
                 {
                     //换列
+                    var x = preDot.position.x + 1;
+                    //不换列条件
+                    var isNotTurn = isOneDotRebuild && stockInfo.dotInterval == 1 && (preDot.position.x >= 1) &&
+                        (dotValueList.length>2 && dotValueList[0].position.y <= dotValueList[2].position.y) &&
+                        (y <= dotValueList[1].position.y) && preDot.position.x - 1 == dotValueList[1].position.x;
+                    if (isNotTurn)
+                    {
+                        x = preDot.position.x;
+
+                    }
                     for (var j = preDot.position.y - 1; j >= y; j--)
                     {
                         var position = {
-                            x: preDot.position.x + 1,
+                            x: x,
                             y: j
                         };
                         var datas = [];
@@ -804,10 +833,10 @@ function CalculateOneDotGraphic(stockInfo, dataList)
                 //不够转折 直接加入
                 else
                 {
-                    //保持最大值的点在第一位
+                    //保持极值的点在第一位
                     if (dotValueList[0].datas.length > 0)
                     {
-                        if (dotValueList[0].datas[0].close < curData.close)
+                        if ((stockInfo.isClose && dotValueList[0].datas[0].close < curData.close) || (!stockInfo.isClose && dotValueList[0].datas[0].high < curData.high))
                         {
                             dotValueList[0].datas.unshift(curData);
                         }
@@ -827,10 +856,10 @@ function CalculateOneDotGraphic(stockInfo, dataList)
             //原地踏步
             else
             {
-                //保持最大值的点在第一位
+                //保持极值的点在第一位
                 if (dotValueList[0].datas.length > 0)
                 {
-                    if (dotValueList[0].datas[0].close < curData.close)
+                    if ((stockInfo.isClose && dotValueList[0].datas[0].close < curData.close) || (!stockInfo.isClose && dotValueList[0].datas[0].high < curData.high))
                     {
                         dotValueList[0].datas.unshift(curData);
                     }
@@ -885,10 +914,21 @@ function CalculateOneDotGraphic(stockInfo, dataList)
                 if (y - preDot.position.y >= stockInfo.dotInterval)
                 {
                     //换列
+                    var x = preDot.position.x + 1;
+                    //不换列条件
+                    var isNotTurn = isOneDotRebuild && stockInfo.dotInterval == 1 && (preDot.position.x >= 1) &&
+                        (dotValueList.length>2 && dotValueList[0].position.y <= dotValueList[2].position.y) &&
+                        (y <= dotValueList[1].position.y) && preDot.position.x - 1 == dotValueList[1].position.x;
+                    if (isNotTurn)
+                    {
+                        x = preDot.position.x;
+
+                    }
+
                     for (var j = preDot.position.y + 1; j <= y; j++)
                     {
                         var position = {
-                            x: preDot.position.x + 1,
+                            x: x,
                             y: j
                         };
                         var datas = [];
@@ -908,10 +948,10 @@ function CalculateOneDotGraphic(stockInfo, dataList)
                 //不够转折 直接加入
                 else
                 {
-                    //保持最大值的点在第一位
+                    //保持极值的点在第一位
                     if (dotValueList[0].datas.length > 0)
                     {
-                        if (dotValueList[0].datas[0].close < curData.close)
+                        if ((stockInfo.isClose && dotValueList[0].datas[0].close > curData.close) || (!stockInfo.isClose && dotValueList[0].datas[0].low > curData.low))
                         {
                             dotValueList[0].datas.unshift(curData);
                         }
@@ -930,10 +970,10 @@ function CalculateOneDotGraphic(stockInfo, dataList)
             //原地踏步
             else
             {
-                //保持最大值的点在第一位
+                //保持极值的点在第一位
                 if (dotValueList[0].datas.length > 0)
                 {
-                    if (dotValueList[0].datas[0].close < curData.close)
+                    if ((stockInfo.isClose && dotValueList[0].datas[0].close > curData.close) || (!stockInfo.isClose && dotValueList[0].datas[0].low > curData.low))
                     {
                         dotValueList[0].datas.unshift(curData);
                     }
@@ -960,13 +1000,10 @@ function InitData(result)
     //var result = ReadStockData(code);
     /*处理数据*/
     //1、获取最高、最低点
-    var minPrice = result.list[0].low;
-    var maxPrice = result.list[0].high;
 
-    var minVolume = result.list[0].volume;
-    var maxVolume = result.list[0].volume;
     var dataList = [];
-    var length = result.list.length; // > 1000 ? 1000 : result.list.length;
+    var length = result.list.length;
+    //挑取时间范围内的数据
     for (var i = 0; i < length; i++)
     {
         var item = result.list[i];
@@ -986,6 +1023,58 @@ function InitData(result)
                 continue;
             }
         }
+    }
+
+
+    //调换时间顺序为从最早到今天
+    dataList.reverse();
+    //复权处理
+    /*复权处理
+    涨跌幅算法
+        复权因子 = 当日的前收盘价 / 昨天的收盘
+        向前复权价 = 实际价 * 每一次的复权因子
+        (以最后一个点(今天)为基准点向前推)
+        向后复权价 = 实际价 / 每一次的复权因子
+        (以第一个点为基准点向前推)
+    */
+    //前复权 昨收价要有值 以今天为基准 改昨天的所有价格
+    if (rehabilitation == 1 && dataList[0].lastClose > 0)
+    {
+        for (var i = dataList.length - 1; i >= 1; i--)
+        {
+            var item = dataList[i - 1];
+
+            var rehabilitationValue = dataList[i].lastClose / item.close;
+            item.close = (item.close * rehabilitationValue).toFixed(2);
+            item.high = (item.high * rehabilitationValue).toFixed(2);
+            item.low = (item.low * rehabilitationValue).toFixed(2);
+            item.open = (item.open * rehabilitationValue).toFixed(2);
+            item.lastClose = (item.lastClose * rehabilitationValue).toFixed(2);
+        }
+    }
+    //后复权 以第一天为基准 改明天的价
+    else if (rehabilitation == 2 && dataList[0].lastClose > 0)
+    {
+        for (var i = 0; i < dataList.length - 1; i++)
+        {
+            var item = dataList[i + 1];
+            var rehabilitationValue = item.lastClose / dataList[i].close;
+            item.close = (item.close / rehabilitationValue).toFixed(2);
+            item.high = (item.high / rehabilitationValue).toFixed(2);
+            item.low = (item.low / rehabilitationValue).toFixed(2);
+            item.open = (item.open / rehabilitationValue).toFixed(2);
+            item.lastClose = (item.lastClose / rehabilitationValue).toFixed(2);
+        }
+    }
+    //最大、最小价格、成交量
+    var minPrice = dataList[0].low;
+    var maxPrice = dataList[0].high;
+    var minVolume = dataList[0].volume;
+    var maxVolume = dataList[0].volume;
+    for (var i = 1; i < dataList.length; i++)
+    {
+        var item = dataList[i];
+
         if (parseFloat(item.low) < parseFloat(minPrice))
         {
             minPrice = item.low;
@@ -1002,8 +1091,9 @@ function InitData(result)
         {
             maxVolume = item.volume;
         }
-
     }
+    //最大刻度是0.05的倍数且比最大值稍大 即便于观察，又可以解决刚好卡线的尴尬问题
+    maxPrice = (parseInt(maxPrice / 0.05) + 1) * 0.05;
     curList = dataList;
     //单格值
     if (latticeValue == 0)
@@ -1038,8 +1128,6 @@ function InitData(result)
     stockInfo.startIndex = startIndex;
     stockInfo.endIndex = endIndex;
     returnValue.stockInfo = stockInfo;
-    //复权处理
-    /*未完待续*/
 
     //计算每个点的位置、涨跌状态
     //console.log("数据条数:"+dataList.length)
@@ -1348,16 +1436,24 @@ function drawToolTipD(dotValue, x, y)
 
 function onMouseMoveK(e)
 {
-    var tip = document.getElementById("kline_tip");
-    tip.style.display = 'none';
-    var px = e.layerX;
-    var py = e.layerY;
-    var x = parseInt(px / spaceK);
-    var y = parseInt(py / spaceK);
-    if (x >= 0 && y >= 0)
+    try
     {
-        drawToolTipK(tip, px, py);
+        var tip = document.getElementById("kline_tip");
+        tip.style.display = 'none';
+        var px = e.layerX;
+        var py = e.layerY;
+        var x = parseInt(px / spaceK);
+        var y = parseInt(py / spaceK);
+        if (x >= 0 && y >= 0)
+        {
+            drawToolTipK(tip, px, py);
+        }
     }
+    catch (err)
+    {
+        return;
+    }
+
 }
 
 function drawToolTipK(tip, x, y)
@@ -1391,7 +1487,7 @@ function drawToolTipK(tip, x, y)
     var row = 11;
     tipHtml = tipHtml + "</div";
 
-    var width = 120;
+    var width = 130;
     var height = row * 15;
     tip.style.cssText = 'font-family:Arial,"宋体";font-size:8pt';
     tip.style.position = 'absolute';
@@ -1479,13 +1575,50 @@ function generate()
         alert("离线模式目前只支持日线数据,可以选择在线数据!");
         return;
     }
+    if(cycle=="")
+    {
+        alert("请选择周期");
+    }
+    dataSource = document.getElementById("datasource").value;
+    if (dataSource == "")
+    {
+        document.getElementById("datasource").value= "东方财富";
+        dataSource = "东方财富";
+    }
+    var oneDotRebuild = document.getElementById("oneDotRebuild");
+    if (oneDotRebuild.checked)
+    {
+        isOneDotRebuild = true
+    }
+    else
+    {
+        isOneDotRebuild = false
+    }
+    var noRehabilitation = document.getElementById("noRehabilitation");
+    var beforeRehabilitation = document.getElementById("beforeRehabilitation");
+    var afterRehabilitation = document.getElementById("afterRehabilitation");
+    if (noRehabilitation.checked)
+    {
+        rehabilitation = 0;
+    }
+    else if (beforeRehabilitation.checked)
+    {
+        rehabilitation = 1;
+    }
+    else if (afterRehabilitation.checked)
+    {
+        rehabilitation = 2;
+    }
+
     var obj = stockArray[code];
     name = obj[1];
     type = obj[3];
     DrawOX();
+    document.getElementById("btGenerate").focus();
+
 };
 //未用
-function download()
+function fetchUrlContent(url)
 {
     var url = "http://finance.sina.com.cn/realstock/company/sz002095/qianfuquan.js?d=2015-06-16";
     fetch(url)
@@ -1503,6 +1636,7 @@ function download()
 
 function getUrlContentGBKtoUTF8(method, url)
 {
+    console.log(url)
     // 返回一个Promise对象
     return new Promise(function(resolve)
     {
@@ -1528,13 +1662,15 @@ function getUrlContentGBKtoUTF8(method, url)
     })
 }
 
-function getUrlContent(method, url)
+function getUrlContent(method, url, responseType)
 {
+    console.log(url)
+
     // 返回一个Promise对象
     return new Promise(function(resolve)
     {
         var xhr = new XMLHttpRequest() // 创建异步请求
-        //xhr.timeout = 3000;
+        xhr.timeout = 3000;
         // 异步请求状态发生改变时会执行这个函数
         xhr.onreadystatechange = function()
         {
@@ -1557,57 +1693,125 @@ function getUrlContent(method, url)
         //     //resolve("");
         // }
         xhr.open(method, url)
-        xhr.responseType = 'json';
+        xhr.responseType = responseType;
         xhr.send() // 发送异步请求 
     })
 }
 
 function getOnlineData()
 {
-    var scale;
-    if (cycle == "日")
+    var len = 250;
+    if (dataSource == "新浪")
     {
-        scale = 240;
-    }
-    else if (cycle == "5分钟")
-    {
-        scale = 5;
-    }
-    else if (cycle == "30分钟")
-    {
-        scale = 30;
-    }
-    else if (cycle == "60分钟")
-    {
-        scale = 60;
-    }
-    var url = "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=" + type + code + "&scale=" + scale + "&ma=no&datalen=1023";
-
-    return getUrlContent("GET", url).then(function(result)
-    {
-        if (result == null || result == "")
+        var scale;
+        if (cycle == "日")
         {
-            alert("未获取到数据,请检查网络连接状况或者浏览器是否允许跨域访问!");
+            scale = 240;
+            var starttime = new Date(document.getElementById("beginDate").value).getTime();
+            var endtime = new Date(document.getElementById("endDate").value).getTime();
+            len = parseInt(Math.ceil((endtime - starttime) / (1000 * 60 * 60 * 24)) * 5 / 7);
+        }
+        else if (cycle == "周")
+        {
+            scale = 1200;
+        }
+        else if (cycle == "月" || cycle == "季" || cycle == "年")
+        {
+            alert("新浪股票月线及以上需要根据日线计算,无法抓取")
             return;
         }
-        var list = [];
-        var reg = new RegExp('-', "g");
-        var reg1 = new RegExp(':', "g");
-        var reg2 = new RegExp(' ', "g");
-        var lastClose = 0;
-        for (var i = 0; i < result.length; i++)
+        else
         {
-            if (i > 0)
-            {
-                lastClose = result[i - 1]['close'];
-            }
-            var data = result[i];
-            var date = data['day'].replace(reg, '').replace(reg1, '').replace(reg2, '').substring(0, 12);
-            var item = date + "," + ",," + data['close'] + "," + data['high'] + "," + data['low'] + "," +
-                data['open'] + "," + lastClose + "," + data['volume'] + ",0";
-            list.push(item);
+            scale = parseInt(cycle.replace('分钟', ''))
         }
-        list.reverse();
-        return list;
-    });
+        var url = "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=" + type + code + "&scale=" + scale + "&ma=no&datalen=" + len;
+
+        return getUrlContent("GET", url, "json").then(function(result)
+        {
+            if (result == null || result == "")
+            {
+                alert("未获取到数据,请检查网络连接状况或者浏览器是否允许跨域访问!");
+                return;
+            }
+            var list = [];
+            var reg = new RegExp('-', "g");
+            var reg1 = new RegExp(':', "g");
+            var reg2 = new RegExp(' ', "g");
+            var lastClose = 0;
+            for (var i = 0; i < result.length; i++)
+            {
+                if (i > 0)
+                {
+                    lastClose = result[i - 1]['close'];
+                }
+                var data = result[i];
+                var date = data['day'].replace(reg, '').replace(reg1, '').replace(reg2, '').substring(0, 12);
+                var item = date + "," + ",," + data['close'] + "," + data['high'] + "," + data['low'] + "," +
+                    data['open'] + "," + lastClose + "," + data['volume'] + ",0";
+                list.push(item);
+            }
+            list.reverse();
+            return list;
+        });
+    }
+    else if (dataSource == "东方财富")
+    {
+        var scale;
+        if (cycle == "日")
+        {
+            scale = 101;
+        }
+        else if (cycle == "周")
+        {
+            scale = 102;
+        }
+        else if (cycle == "月")
+        {
+            scale = 103;
+        }
+        else
+        {
+            scale = parseInt(cycle.replace('分钟', ''))
+        }
+
+        var typeNum = (type == "sh" ? "1" : "0");
+        var url = "http://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery&secid=" + typeNum + "." + code + "&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57&klt=" + scale + "&fqt=" + rehabilitation + "&beg=" + beginDate + "&end=" + endDate;
+
+        return getUrlContent("GET", url, "text").then(function(result)
+        {
+            if (result == null || result == "")
+            {
+                alert("未获取到数据,请检查网络连接状况或者浏览器是否允许跨域访问!");
+                return;
+            }
+            //东方财富的数据不是标准json
+            //获得字符串的开始位置
+            var start = result.indexOf('[');
+            var end = result.indexOf(']');
+            //日期,股票代码,名称,收盘价,最高价,最低价,开盘价,前收盘,成交量,成交金额 date,open,close,high,low,volume,amount
+            var regstr = new RegExp('"', "g");
+            var str = result.substring(start + 1, end).replace(regstr, '')
+            var dataList = str.split(',');
+
+            var reg = new RegExp('-', "g");
+            var reg1 = new RegExp(':', "g");
+            var reg2 = new RegExp(' ', "g");
+            var lastClose = 0;
+            var list = [];
+            var distance = 7
+            for (var i = 0; i < dataList.length / distance; i++)
+            {
+                if (i > 0)
+                {
+                    lastClose = dataList[(i - 1) * distance + 2];
+                }
+                var date = dataList[i * distance].replace(reg, '').replace(reg1, '').replace(reg2, '').substring(0, 12);
+                var item = date + "," + ",," + dataList[i * distance + 2] + "," + dataList[i * distance + 3] + "," + dataList[i * distance + 4] + "," +
+                    dataList[i * distance + 1] + "," + lastClose + "," + dataList[i * distance + 5] * 100 + "," + dataList[i * distance + 6];
+                list.push(item);
+            }
+            list.reverse();
+            return list;
+        });
+    }
 }

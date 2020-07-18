@@ -16,7 +16,7 @@
 
 <body>
     <div id="left">
-        <strong>威科夫操盘工具</strong>
+        <h4 style="text-align:center;margin-top: 10px;margin-bottom: 10px;">威科夫操盘工具</h4>
         <input type="file" webkitdirectory directory multiple name="file" id="filePicker" onchange="loadFileList()" accept="*" value="加载离线股票数据" /><br /> <br />
         <label id="offlinel"><input id="offline" name="dataSource" type="radio" value="0" onchange="
             var offline = document.getElementById('offline');
@@ -26,6 +26,7 @@
             {
                 offlinel.style.color='red';
                 onlinel.style.color='black';
+                document.getElementById('div_datasource').style.display='none'
             }
         " />离线</label>
         <label id="onlinel" style="color:red"><input id="online" checked="checked" name="dataSource" type="radio" value="1" onchange="
@@ -36,10 +37,18 @@
             {
                 onlinel.style.color='red';
                 offlinel.style.color='black';
+                document.getElementById('div_datasource').style.display='block'
             }
-        " />在线</label> <br /><br />
+        " />在线</label><br />
+        <div id="div_datasource">
+            <a>来源: </a>
+            <input id="datasource" style="width: 145px" type="text" list="datasource_list" name="cycle" value="东方财富" onchange="" onFocus="if (value !=''){value =''}" autocomplete="off" />
+            <datalist id="datasource_list">
+                <!--option label="新浪" value="新浪" id="sina" /-->
+                <option label="东方财富" value="东方财富" id="eastmoney" />
+            </datalist></div><br />
         <a>周期: </a>
-        <input id="cycle" type="text" list="cycle_list"  name="cycle" value="日" onchange="
+        <input id="cycle" type="text" list="cycle_list" name="cycle" value="日" onchange="
         var code = document.getElementById('search-input').value;
         if (code == '' || code == '请输入股票代码')
         {
@@ -52,17 +61,21 @@
         <datalist id="cycle_list">
             <option label="日" value="日" id="day" />
             <option label="5分钟" value="5分钟" id="fmin" />
+            <option label="15分钟" value="15分钟" id="ftmin" />
             <option label="30分钟" value="30分钟" id="tmin" />
+            <option label="60分钟" value="60分钟" id="smin" />
+            <option label="周" value="周" id="week" />
+            <option label="月" value="月" id="month" />
         </datalist><br /> <br />
-        <label><input id="no" name="Rehabilitation" type="radio" value="0" />不复权</label>
-        <label><input id="before" name="Rehabilitation" type="radio" checked="checked" value="1" />前复权</label> <br />
-        <label><input id="after" name="Rehabilitation" type="radio" value="0" />后复权</label> <br />
+        <label><input id="noRehabilitation" name="Rehabilitation" type="radio" value="0" />不复权</label>
+        <label><input id="beforeRehabilitation" name="Rehabilitation" type="radio" checked="checked" value="1" />前复权</label> <br />
+        <label><input id="afterRehabilitation" name="Rehabilitation" type="radio" value="2" />后复权</label> <br />
         </form> <br />
         <a>股票：</a>
         <input id="search-input" type="text" list="stock_list" onchange="
         document.getElementById('latticeValue').value=0;
         generate();
-        " name="ss" id="stocklist" value="" onFocus="if (value !=''){value =''}" onBlur="if (value ==''){value='请输入股票代码'}" autocomplete="off" />
+        " name="ss" id="stocklist" value="000001" onFocus="if (value !=''){value =''}" onBlur="if (value ==''){value='请输入股票代码'}" autocomplete="off" />
         <datalist id="stock_list">
         </datalist><br />
         <a>格值：</a>
@@ -81,8 +94,8 @@
         <!--form action="" method="get"><br /--><br />
         <label><input id="kline_g" name="lineType" type="radio" checked="checked" value="1" />K线图</label>
         <label><input id="bamboo_g" name="lineType" type="radio" value="0" />竹线图</label> <br />
-        <button type="button" onclick="generate()">生成点数图</button><br />
-        <p>1、请先选择数据文件的根目录<br />2、下载数据请执行根目录下的updateData.sh<p>
+        <button type="button" id="btGenerate" onclick="generate()">生成点数图</button><br /><br />
+        <input name='oneDotRebuild' type="checkbox" checked="checked" id="oneDotRebuild" value="1" /><label>单点重建</label>
     </div>
     <div id="right" style="align:center;overflow:auto">
         <div id="tab">
@@ -131,9 +144,8 @@
         document.getElementById("endDate").value = endDate;
 
         TabInit();
-        //var //filePicker=document.getElementById("filePicker");
-        //filePicker.click();
         loadStockList();
+        generate();
     }
 
     function TabInit()

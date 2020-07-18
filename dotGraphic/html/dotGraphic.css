@@ -1,7 +1,8 @@
- *{
+ * {
      margin-left: 1px;
      margin-right: 1px;
  }
+
  body {
      width: 99.9%;
      overflow-x: hidden;
@@ -30,15 +31,20 @@
  }
 
  #left {
-     width: 17%;
+     width: 19%;
      height: 600px;
      float: left;
      border: 1px solid gray;
      margin-left: 5px;
+     line-height: 20px;
+ }
+
+ #filePicker {
+     width: 89%;
  }
 
  #right {
-     width: 82%;
+     width: 80%;
      height: 600px;
      border: 1px solid gray;
      float: left;
@@ -53,9 +59,10 @@
      /*border: 2px;*/
  }
 
- label,a {
+ label,input,
+ a {
      margin-left: 5%;
-     font-size: 12pt;
+     font-size: 11pt;
  }
 
  button {
@@ -86,7 +93,7 @@
      height: 16px;
      text-align: center;
      position: relative;
-     width: 99.9%;
+     width: 98%;
  }
 
  #tab-header ul {
@@ -97,7 +104,7 @@
  #tab-header ul li {
      float: left;
      height: 15px;
-     width: 98px;
+     width: 90px;
      /*padding: 0 1px;
      border-bottom: 1px solid #dddddd;*/
      font-size: 8pt;
