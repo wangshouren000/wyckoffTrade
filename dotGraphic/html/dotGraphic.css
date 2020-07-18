@@ -59,7 +59,8 @@
      /*border: 2px;*/
  }
 
- label,input,
+ label,
+ input,
  a {
      margin-left: 5%;
      font-size: 11pt;
@@ -143,4 +144,8 @@
 
  #tab-content .dom ul li a:hover {
      color: orange;
+ }
+
+ #kline_tip {
+     z-index: 2;
  }

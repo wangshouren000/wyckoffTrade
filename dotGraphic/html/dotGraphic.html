@@ -17,7 +17,7 @@
 <body>
     <div id="left">
         <h4 style="text-align:center;margin-top: 10px;margin-bottom: 10px;">威科夫操盘工具</h4>
-        <input type="file" webkitdirectory directory multiple name="file" id="filePicker" onchange="loadFileList()" accept="*" value="加载离线股票数据" /><br /> <br />
+        <input type="file" style="display:none" webkitdirectory directory multiple name="file" id="filePicker" onchange="loadFileList()" accept="*" value="加载离线股票数据" /><br />
         <label id="offlinel"><input id="offline" name="dataSource" type="radio" value="0" onchange="
             var offline = document.getElementById('offline');
             var onlinel = document.getElementById('onlinel');
@@ -26,9 +26,13 @@
             {
                 offlinel.style.color='red';
                 onlinel.style.color='black';
-                document.getElementById('div_datasource').style.display='none'
+                document.getElementById('div_datasource').style.display='none';
+                document.getElementById('filePicker').style.display='block';
+                document.getElementById('filePicker').click();
+
             }
-        " />离线</label>
+
+        " />离线(需选择离线文件夹)</label>
         <label id="onlinel" style="color:red"><input id="online" checked="checked" name="dataSource" type="radio" value="1" onchange="
             var online = document.getElementById('online');
             var onlinel = document.getElementById('onlinel');
@@ -38,15 +42,16 @@
                 onlinel.style.color='red';
                 offlinel.style.color='black';
                 document.getElementById('div_datasource').style.display='block'
+                document.getElementById('filePicker').style.display='none'
             }
-        " />在线</label><br />
+        " />在线</label><br /><br />
         <div id="div_datasource">
             <a>来源: </a>
             <input id="datasource" style="width: 145px" type="text" list="datasource_list" name="cycle" value="东方财富" onchange="" onFocus="if (value !=''){value =''}" autocomplete="off" />
             <datalist id="datasource_list">
                 <!--option label="新浪" value="新浪" id="sina" /-->
                 <option label="东方财富" value="东方财富" id="eastmoney" />
-            </datalist></div><br />
+            </datalist><br /><br /></div>
         <a>周期: </a>
         <input id="cycle" type="text" list="cycle_list" name="cycle" value="日" onchange="
         var code = document.getElementById('search-input').value;
@@ -70,7 +75,7 @@
         <label><input id="noRehabilitation" name="Rehabilitation" type="radio" value="0" />不复权</label>
         <label><input id="beforeRehabilitation" name="Rehabilitation" type="radio" checked="checked" value="1" />前复权</label> <br />
         <label><input id="afterRehabilitation" name="Rehabilitation" type="radio" value="2" />后复权</label> <br />
-        </form> <br />
+        </form>
         <a>股票：</a>
         <input id="search-input" type="text" list="stock_list" onchange="
         document.getElementById('latticeValue').value=0;
@@ -85,7 +90,7 @@
         <label><input id="threeDot" name="dotInterval" type="radio" value="3" />三点图</label><br />
         <label><input id="fiveDot" name="dotInterval" type="radio" value="5" />五点图</label>
         <!--/form-->
-        <!--form action="" method="get">构建：--><br /><br />
+        <!--form action="" method="get">构建：--><br />
         <label><input id="close" name="buildType" type="radio" value="1" />收盘价</label>
         <label><input id="highLow" name="buildType" type="radio" checked="checked" value="0" />高低价</label> <br /><br />
         <!--/form> <br /-->
@@ -94,8 +99,34 @@
         <!--form action="" method="get"><br /--><br />
         <label><input id="kline_g" name="lineType" type="radio" checked="checked" value="1" />K线图</label>
         <label><input id="bamboo_g" name="lineType" type="radio" value="0" />竹线图</label> <br />
-        <button type="button" id="btGenerate" onclick="generate()">生成点数图</button><br /><br />
-        <input name='oneDotRebuild' type="checkbox" checked="checked" id="oneDotRebuild" value="1" /><label>单点重建</label>
+        <button type="button" id="btGenerate" onclick="generate()">生成点数图</button><br />
+        <input name='percentLatticeCheck' type="checkbox" id="percentLatticeCheck" value="0" onchange="
+            var check = document.getElementById('percentLatticeCheck');
+            var input = document.getElementById('percentlatticeInput');
+
+            if(check.checked)
+            {
+                input.style.display='inline'
+            }
+            else
+            {
+                input.style.display='none'
+            }
+        " /><label title="格值可以按照当前价格的比例计算,比例默认3%,可输入">格值比例<input type="number" id="percentlatticeInput" min="1" max="100" step="1" value="3" style="display:none" />%</label><br />
+        <input name='waveConect' type="checkbox" id="waveConect" value="1" onchange="
+            var check = document.getElementById('waveConect');
+            var input = document.getElementById('waveConectInput');
+
+            if(check.checked)
+            {
+                input.style.display='inline'
+            }
+            else
+            {
+                input.style.display='none'
+            }
+        " /><label title="维斯波忽略小幅反向振动,反向幅度可输入;维斯波里加入幅度对成交量的加成(努力和收获原则)">小幅反转比<input type="number" id="waveConectInput" min="0.01" max="10" step="0.01" value="0.5" style="display:none" />%</label><br />
+        <input name='oneDotRebuild' type="checkbox" checked="checked" id="oneDotRebuild" value="1" /><label title="单点图忽略一点转折的换列">单点重建</label>
     </div>
     <div id="right" style="align:center;overflow:auto">
         <div id="tab">
@@ -146,6 +177,34 @@
         TabInit();
         loadStockList();
         generate();
+        InitmouseCross();
+        document.onmousemove = function(e)
+        {
+            drawmouseCross(e);
+        }
+    }
+
+    function drawmouseCross(e)
+    {
+        var ox = document.getElementById('cross_x');
+        var oy = document.getElementById('cross_y');
+        var e = e || event;
+        var x = e.pageX;
+        var y = e.pageY;
+        var left = document.getElementById('left');
+        if (x > left.offsetWidth)
+        {
+            ox.style.display = "block";
+            oy.style.display = "block";
+            ox.style.top = y + 'px';
+            oy.style.left = x + 'px';
+            //document.getElementById('html').innerHTML = 'x : ' + x + '<br/>y : ' + y;
+        }
+        else
+        {
+            ox.style.display = "none";
+            oy.style.display = "none";
+        }
     }
 
     function TabInit()
@@ -188,10 +247,38 @@
                 paddingLeft = (parseInt(paddingLeft) - 150) + "px"
                 ul.style.paddingLeft = paddingLeft;
                 scrollBottomAndRightTag(document.getElementById("right"));
-
             }
         }
     }
+
+    function InitmouseCross()
+    {
+        var ox = document.createElement('div');
+        ox.id = 'cross_x';
+        var oy = document.createElement('div');
+        oy.id = 'cross_y';
+
+        ox.style.width = '100%';
+        ox.style.height = '1px';
+        //ox.style.backgroundColor = 'black';
+        ox.style.setProperty('background-color', 'gray', 'important')
+
+        ox.style.position = 'fixed';
+        ox.style.left = 0;
+        document.body.appendChild(ox);
+        oy.style.height = '100%';
+        oy.style.width = '1px';
+        //oy.style.backgroundColor = 'black';
+        oy.style.setProperty('background-color', 'gray', 'important')
+        oy.style.position = 'fixed';
+        oy.style.top = 0;
+
+        ox.style.display = "none";
+        oy.style.display = "none";
+        document.body.appendChild(oy);
+        //drawmouseCross(e);
+
+    };
     </script>
 </body>
 

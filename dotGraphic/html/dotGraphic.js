@@ -24,37 +24,49 @@
     fqt=
         0 不复权 1 前复权 2 后复权
 */
-var stockArray = {};
-var name;
-var code;
-var type;
-var isOnline = false;
-var keypairFileList = {};
-var canvas;
-var context;
-var canvasK;
-var contextK;
-var table;
-var tableK;
-var isClose;
-var dotInterval;
-var beginDate;
-var endDate;
-var curList;
-var isKline;
-var lineWidth = 1;
-var cycle;
-// 设置一格间隔 像素
-var minSpace = 17; //最小
-var maxSpace = 25;
-var space = minSpace;
-var spaceDot = space;
-var spaceK = space;
-var isOneDotRebuild = true;
-//复权 0 不 1 前 2 后
-var rehabilitation = 0;
-var dataSource = "新浪";
-//存放点的信息
+//公有变量
+{
+    var stockArray = {};
+    var name;
+    var code;
+    var type;
+    var isOnline = false;
+    var keypairFileList = {};
+    var canvas;
+    var context;
+    var canvasK;
+    var contextK;
+    var table;
+    var tableK;
+    var isClose;
+    var dotInterval;
+    var beginDate;
+    var endDate;
+    var curList;
+    var isKline;
+    var lineWidth = 1;
+    var cycle;
+    // 设置一格间隔 像素
+    var minSpace = 17; //最小
+    var maxSpace = 25;
+    var space = minSpace;
+    var spaceDot = space;
+    var spaceK = space;
+    var isOneDotRebuild = true;
+    //复权 0 不 1 前 2 后
+    var rehabilitation = 0;
+    var dataSource = "东方财富";
+    //按照比例计算格值吗
+    var isPercentLattice = false;
+    //每格子占当前价格比例
+    var percentLatticeValue = 3;
+    //维斯波是否小幅反向涨跌不算
+    var isWaveConect = false;
+    //维斯波偏离百分比
+    var wavePercent = 0.5;
+    //存放点的信息
+}
+//点数图点的位置表
 function SetTable(x, y)
 {
     table = new Array(x + 1); //表格有x行
@@ -289,7 +301,7 @@ function DrawPointAndFigure(returnValue)
     context.fillText(str3, space * xIndex - strWhith, space * yIndex + space * (dateIndex + 3));
     context.restore();
 }
-
+//画K线 成交量 和 维斯波
 function DrawKLine(curList, stockInfo)
 {
     //索引偏移量
@@ -451,7 +463,7 @@ function DrawKLine(curList, stockInfo)
 
         var startpyHL = ((yIndex - parseFloat(item.low) / parseFloat(latticeValue) + stockInfo.startIndex) * space);
         var endpyHL = ((yIndex - parseFloat(item.high) / parseFloat(latticeValue) + stockInfo.startIndex) * space);
-        if (startpy > endpy)
+        if (item.close >= item.open)
         {
             contextK.fillStyle = 'OrangeRed';
             contextK.strokeStyle = 'OrangeRed';
@@ -540,7 +552,7 @@ function DrawKLine(curList, stockInfo)
 
         var startpy = endpy - percent * volumeIndex * space;
         var pyheight = endpy - startpy;
-        if (item.close > item.open)
+        if (parseFloat(item.close) > parseFloat(item.open))
         {
             contextK.fillStyle = 'OrangeRed';
         }
@@ -555,7 +567,7 @@ function DrawKLine(curList, stockInfo)
         }
         else
         {
-            if (item.close > item.open)
+            if (parseFloat(item.close) > parseFloat(item.open))
             {
                 contextK.fillStyle = 'OrangeRed';
             }
@@ -568,27 +580,85 @@ function DrawKLine(curList, stockInfo)
         contextK.restore();
     }
 
-    //绘制波形图
+    //绘制波形图 维斯波
     //获取波形图数据
     var waveList = [];
     var waveObj = {
         volume: curList[0].volume,
-        isUp: curList[0].close > curList[0].open
+        isUp: parseFloat(curList[0].close) > parseFloat(curList[0].open)
     };
     waveList.push(waveObj);
-    var minWave = curList[0].volume;
-    var maxWave = curList[0].volume;
+    var minWave = curList[1].volume;
+    var maxWave = minWave;
+    if (isWaveConect) //维斯波是否忽略小幅反向
+    {
+        minWave = curList[1].volume * curList[1].close / curList[0].close;
+        maxWave = minWave;
+    }
     for (var i = 1; i < curList.length; i++)
     {
         var wave = curList[i];
         var preWave = waveList[i - 1];
-        var isUp = wave.close > wave.open;
-        var volume = wave.volume;
-        if (preWave.isUp == isUp)
-        {
-            volume = parseInt(preWave.volume) + parseInt(wave.volume);
-        }
+        var isUp = parseFloat(wave.close) > parseFloat(curList[i - 1].close);
+        //用于记录isUp的状态前后是否一致 主要用于小幅反向震动
+        var isSame = true;
+        var volume = parseInt(wave.volume);
 
+        if (isWaveConect) //维斯波是否忽略小幅反向
+        {
+            volume = parseInt(volume * wave.close / curList[i - 1].close);
+            if (preWave.isUp)
+            {
+                if (!isUp) //前涨后低量小跌算涨
+                {
+                    var isInpercent = Math.abs(curList[i - 1].close - wave.close) / wave.close < (wavePercent / 100) && wave.volume < curList[i - 1].volume;
+                    if (isInpercent)
+                    {
+                        isUp = true;
+                        isSame = false;
+                        //成交量按照反转幅度算
+                        volume = parseInt(volume * Math.abs(wave.close / curList[i - 1].close - 1));
+                    }
+                }
+            }
+            else
+            {
+                if (isUp) //前跌后低量小涨算跌
+                {
+                    var isInpercent = Math.abs(wave.close - curList[i - 1].close) / wave.close < (wavePercent / 100) && wave.volume < curList[i - 1].volume;
+                    if (isInpercent)
+                    {
+                        isUp = false;
+                        isSame = false;
+                        volume = parseInt(volume * Math.abs(wave.close / curList[i - 1].close - 1));
+                    }
+                }
+            }
+        }
+        if (isWaveConect) //维斯波是否忽略小幅反向
+        {
+            if (preWave.isUp == isUp)
+            {
+                if (isSame)
+                {
+                    volume = parseInt(preWave.volume) + parseInt(volume);
+                }
+                else
+                {
+                    //小幅反向震动减其成交量累加
+                    volume = parseInt(preWave.volume) - parseInt(volume);
+                }
+            }
+        }
+        else
+        {
+            if (preWave.isUp == isUp)
+            {
+
+                volume = parseInt(preWave.volume) + parseInt(volume);
+
+            }
+        }
         var obj = {
             volume: volume,
             isUp: isUp
@@ -602,11 +672,10 @@ function DrawKLine(curList, stockInfo)
             maxWave = volume;
         }
         waveList.push(obj);
-
     }
     var waveStartpy = space * yIndex + space * dateIndex + volumeIndex * space + space * 1 / 10;
 
-    //绘制波形图
+    //绘制维斯波波形图 
     for (var i = 1; i < waveList.length; i++)
     {
         contextK.save();
@@ -627,7 +696,7 @@ function DrawKLine(curList, stockInfo)
         }
         if (isKline)
         {
-            contextK.fillRect(startpx, startpy, spaceX * 0.8, pyheight);
+            contextK.fillRect(startpx + 0.35 * spaceX, startpy, spaceX * 0.3, pyheight);
 
         }
         else
@@ -664,6 +733,11 @@ function DrawKLine(curList, stockInfo)
 //获取价格对应的单格值
 function CalLatticeValue(basePrice)
 {
+    if (isPercentLattice)
+    {
+
+        return parseInt(parseInt(basePrice * percentLatticeValue / 100) / 10) * 10 + 10;
+    }
     if (basePrice <= 0.25)
     {
         return 0.0625;
@@ -698,7 +772,7 @@ function CalLatticeValue(basePrice)
     }
     else
     {
-        return parseInt(parseInt(basePrice * 0.02) / 10) * 10 + 10;
+        return parseInt(parseInt(basePrice * 0.03) / 10) * 10 + 10;
     }
 }
 
@@ -723,7 +797,7 @@ function CalculateOneDotGraphic(stockInfo, dataList)
     var curPrice = 0;
     if (stockInfo.isClose)
     {
-        status = (dataList[0].close > dataList[0].open);
+        status = parseFloat(dataList[0].close) > parseFloat(dataList[0].open);
         curPrice = dataList[0].close;
     }
     else
@@ -732,7 +806,7 @@ function CalculateOneDotGraphic(stockInfo, dataList)
         var data2 = dataList[1];
         var increaseRate = data2.high / data1.low - 1;
         var decreaseRate = 1 - data2.low / data1.high;
-        status = increaseRate > decreaseRate;
+        status = parseFloat(increaseRate) > parseFloat(decreaseRate);
         curPrice = status ? data1.high : data1.low;
     }
 
@@ -803,7 +877,7 @@ function CalculateOneDotGraphic(stockInfo, dataList)
                     var x = preDot.position.x + 1;
                     //不换列条件
                     var isNotTurn = isOneDotRebuild && stockInfo.dotInterval == 1 && (preDot.position.x >= 1) &&
-                        (dotValueList.length>2 && dotValueList[0].position.y <= dotValueList[2].position.y) &&
+                        (dotValueList.length > 2 && dotValueList[0].position.y <= dotValueList[2].position.y) &&
                         (y <= dotValueList[1].position.y) && preDot.position.x - 1 == dotValueList[1].position.x;
                     if (isNotTurn)
                     {
@@ -917,7 +991,7 @@ function CalculateOneDotGraphic(stockInfo, dataList)
                     var x = preDot.position.x + 1;
                     //不换列条件
                     var isNotTurn = isOneDotRebuild && stockInfo.dotInterval == 1 && (preDot.position.x >= 1) &&
-                        (dotValueList.length>2 && dotValueList[0].position.y <= dotValueList[2].position.y) &&
+                        (dotValueList.length > 2 && dotValueList[0].position.y <= dotValueList[2].position.y) &&
                         (y <= dotValueList[1].position.y) && preDot.position.x - 1 == dotValueList[1].position.x;
                     if (isNotTurn)
                     {
@@ -1098,11 +1172,12 @@ function InitData(result)
     //单格值
     if (latticeValue == 0)
     {
-        latticeValue = CalLatticeValue((parseFloat(minPrice) + parseFloat(maxPrice)) / 2);
+        //latticeValue = CalLatticeValue((parseFloat(minPrice) + parseFloat(maxPrice)) / 2);
+        latticeValue = CalLatticeValue(curList[curList.length - 1].close);
         var gridNum = parseInt((maxPrice - minPrice) / latticeValue);
         if (gridNum < 5)
         {
-            latticeValue = ((maxPrice - minPrice) / 5).toFixed(2);
+            latticeValue = (latticeValue * 0.7).toFixed(2);
         }
         document.getElementById("latticeValue").value = latticeValue;
         latticeValue
@@ -1197,7 +1272,6 @@ function ReadStockData()
     {
         return getOnlineData();
     }
-
 }
 //开始画图
 function StartDraw(dataList)
@@ -1216,13 +1290,13 @@ function StartDraw(dataList)
         //日期,股票代码,名称,收盘价,最高价,最低价,开盘价,前收盘,成交量,成交金额
         var item = {
             date: data[0].replace(reg, ''),
-            close: data[3],
-            high: data[4],
-            low: data[5],
-            open: data[6],
-            lastClose: data[7],
+            close: parseFloat(data[3]),
+            high: parseFloat(data[4]),
+            low: parseFloat(data[5]),
+            open: parseFloat(data[6]),
+            lastClose: parseFloat(data[7]),
             volume: data[8],
-            amount: data[9]
+            amount: parseFloat(data[9])
         };
         list.push(item);
     }
@@ -1434,6 +1508,7 @@ function drawToolTipD(dotValue, x, y)
     tip.innerHTML = tipHtml;
 }
 
+
 function onMouseMoveK(e)
 {
     try
@@ -1449,7 +1524,7 @@ function onMouseMoveK(e)
             drawToolTipK(tip, px, py);
         }
     }
-    catch (err)
+    catch(err)
     {
         return;
     }
@@ -1502,7 +1577,6 @@ function drawToolTipK(tip, x, y)
     tip.style.display = 'block';
     tip.innerHTML = tipHtml;
 }
-
 
 function generate()
 {
@@ -1575,14 +1649,14 @@ function generate()
         alert("离线模式目前只支持日线数据,可以选择在线数据!");
         return;
     }
-    if(cycle=="")
+    if (cycle == "")
     {
         alert("请选择周期");
     }
     dataSource = document.getElementById("datasource").value;
     if (dataSource == "")
     {
-        document.getElementById("datasource").value= "东方财富";
+        document.getElementById("datasource").value = "东方财富";
         dataSource = "东方财富";
     }
     var oneDotRebuild = document.getElementById("oneDotRebuild");
@@ -1609,6 +1683,14 @@ function generate()
     {
         rehabilitation = 2;
     }
+    var percentLatticeCheck = document.getElementById("percentLatticeCheck");
+    var percentlatticeInput = document.getElementById("percentlatticeInput");
+    isPercentLattice = percentLatticeCheck.checked;
+    if (isPercentLattice)
+    {
+        percentLatticeValue = percentlatticeInput.value;
+    }
+    isWaveConect = document.getElementById("waveConect").checked;
 
     var obj = stockArray[code];
     name = obj[1];
