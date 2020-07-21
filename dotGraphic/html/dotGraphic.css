@@ -13,6 +13,27 @@
      color: red;
  }
 
+ table {
+     /*设置缩放原点和缩放比例*/
+     transform-origin: 10px 10px;
+     -webkit-transform: scale(0.7);
+     width: 300px;
+ }
+
+ table,
+ tr,
+ th {
+     border: 0px 0px 0px 0px;
+     border-spacing: 0px;
+ }
+
+ table tr th {
+     /*width: 500px;*/
+     font-size: 12px !important;
+     border: 0.1px solid black;
+     border-collapse: collapse;
+ }
+
  /*备注：两个canvas，dotGraphic绘点数图，背景色淡黄，处于底层， tooltip展示悬停效果，处于顶层，背景色必须是透明。二者大小完全一样，重叠*/
  canvas {
      border: 0px solid black;
@@ -32,9 +53,9 @@
 
  #left {
      width: 19%;
-     height: 600px;
+     height: 620px;
      float: left;
-     border: 1px solid gray;
+     /*border: 1px solid gray;*/
      margin-left: 5px;
      line-height: 20px;
  }
@@ -44,9 +65,16 @@
  }
 
  #right {
-     width: 80%;
-     height: 600px;
-     border: 1px solid gray;
+     width: 63%;
+     height: 620px;
+     /*border: 1px solid gray;*/
+     float: left;
+ }
+
+ #info {
+     width: 17%;
+     height: 620px;
+     /*border: 1px solid gray;*/
      float: left;
  }
 
@@ -75,6 +103,7 @@
 
  ul {
      list-style: none;
+     padding-left: 0px;
  }
 
  #tab {
@@ -105,7 +134,7 @@
  #tab-header ul li {
      float: left;
      height: 15px;
-     width: 90px;
+     /*width: 90px;*/
      /*padding: 0 1px;
      border-bottom: 1px solid #dddddd;*/
      font-size: 8pt;
@@ -139,7 +168,7 @@
  #tab-content .dom ul li {
      float: left;
      /*background-color: red;*/
-     width: 225px;
+     /*width: 225px;*/
  }
 
  #tab-content .dom ul li a:hover {

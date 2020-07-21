@@ -26,6 +26,8 @@
 */
 //公有变量
 {
+    //在线获取股票列表
+    var isOnlineStockList = true;
     var stockArray = {};
     var name;
     var code;
@@ -47,7 +49,7 @@
     var lineWidth = 1;
     var cycle;
     // 设置一格间隔 像素
-    var minSpace = 17; //最小
+    var minSpace = 15; //最小
     var maxSpace = 25;
     var space = minSpace;
     var spaceDot = space;
@@ -59,12 +61,14 @@
     //按照比例计算格值吗
     var isPercentLattice = false;
     //每格子占当前价格比例
-    var percentLatticeValue = 3;
+    var percentLatticeValue = 2;
     //维斯波是否小幅反向涨跌不算
     var isWaveConect = false;
     //维斯波偏离百分比
     var wavePercent = 0.5;
-    //存放点的信息
+    //存放点数图的信息
+    var dotValueList;
+    var scale = 1;
 }
 //点数图点的位置表
 function SetTable(x, y)
@@ -97,22 +101,23 @@ function DrawPointAndFigure(returnValue)
         //清理
         table = [];
 
-        var dotValueList = returnValue.dotValueList;
+        dotValueList = returnValue.dotValueList;
         var latticeValue = returnValue.stockInfo.latticeValue;
         // 定义当前坐标
 
         minSpace = 15; //最小
         maxSpace = 25;
+        space = minSpace * scale;
         var yIndex = returnValue.stockInfo.endIndex - returnValue.stockInfo.startIndex + offsetY;
         var xIndex = dotValueList[0].position.x + offsetX;
         var spacex = canvas.width / xIndex;
         var spacey = canvas.height / yIndex;
-        if (spacex > minSpace && spacey > minSpace)
+        if (spacex > minSpace * scale && spacey > minSpace * scale)
         {
             space = parseInt(spacey > spacex ? spacex : spacey);
-            if (space > maxSpace)
+            if (space > maxSpace * scale)
             {
-                space = maxSpace;
+                space = maxSpace * scale;
             }
 
         }
@@ -131,9 +136,9 @@ function DrawPointAndFigure(returnValue)
         {
             canvas.style.width = width + "px";
             canvas.style.height = height + "px";
-            canvas.height = height * devicePixelRatio;
-            canvas.width = width * devicePixelRatio;
-            context.scale(devicePixelRatio, devicePixelRatio);
+            canvas.height = height * devicePixelRatio * 2;
+            canvas.width = width * devicePixelRatio * 2;
+            context.scale(devicePixelRatio * 2, devicePixelRatio * 2);
         }
         //0点
         context.beginPath();
@@ -141,6 +146,12 @@ function DrawPointAndFigure(returnValue)
         context.fillStyle = "black";
         context.fill();
         context.stroke();
+
+        //字体
+        var font10 = 'bold ' + 10 * scale + 'px 宋体';
+        var font12 = 'bold ' + 12 * scale + 'px 宋体';
+        var font15 = 'bold ' + 15 * scale + 'px 宋体';
+
     }
 
     //绘制水平方向的网格线
@@ -156,7 +167,7 @@ function DrawPointAndFigure(returnValue)
 
         context.save();
         context.fillStyle = 'OrangeRed'
-        context.font = 'bold 10px 微软雅黑'
+        context.font = font10
         context.textBaseline = 'right';
         //设置文本的垂直对齐方式
         context.textAlign = 'right';
@@ -164,8 +175,9 @@ function DrawPointAndFigure(returnValue)
         //标垂直刻度
         //注意：网格是从前偏移量的位置开始画的,所以最后列也是同等位移
         //offsetXSpace offsetYSpace
-
-        var str = (returnValue.stockInfo.maxPrice - y * latticeValue).toFixed(2);
+        //刻度偏移 便于看
+        var maxPriceNew = ((parseInt(returnValue.stockInfo.maxPrice / 0.05) + 1) * 0.05).toFixed(2);
+        var str = (maxPriceNew - y * latticeValue).toFixed(2);
         context.fillText(str, offsetXSpace - space / 2, y * space + offsetYSpace);
 
         context.fillText(str, space * xIndex + space * 4, y * space + offsetYSpace);
@@ -194,7 +206,7 @@ function DrawPointAndFigure(returnValue)
         //标顶部水平刻度
         context.save();
         context.fillStyle = 'green'
-        context.font = 'bold 6px 微软雅黑'
+        context.font = font10
         context.textBaseline = 'bottom';
         //设置文本的垂直对齐方式
         context.textAlign = 'center';
@@ -204,7 +216,7 @@ function DrawPointAndFigure(returnValue)
     }
     //填充OX
     context.save();
-    context.font = 'bold 15px 微软雅黑'
+    context.font = font15
     context.textBaseline = 'middle';
     context.textAlign = 'center';
 
@@ -225,7 +237,7 @@ function DrawPointAndFigure(returnValue)
         if (dotValue.isUp)
         {
             //画X
-            context.font = 'bold 15px 微软雅黑';
+            context.font = font15
             if (dotValue.isFill)
             {
                 context.fillStyle = 'lightgray';
@@ -237,7 +249,7 @@ function DrawPointAndFigure(returnValue)
         else
         {
             //画O
-            context.font = 'bold 15px 微软雅黑';
+            context.font = font15
             if (dotValue.isFill)
             {
                 context.fillStyle = 'lightgray';
@@ -265,7 +277,7 @@ function DrawPointAndFigure(returnValue)
             //date = date.substring(2, 6);
             //year = date.substring(0, 2);
             //month = date.substring(2, 4);
-            context.font = 'bold 10px 微软雅黑';
+            context.font = font10
             //context.fillText(month, space * x + space / 2, space * yIndex + space * 3 / 2);
             context.fillStyle = 'green';
             context.translate(space * x + space / 2, space * yIndex + space * 0.5);
@@ -287,7 +299,7 @@ function DrawPointAndFigure(returnValue)
     // context.fillText("年", space * xIndex + space / 2, space * yIndex + space * 3 / 2);
 
     // 最新日期
-    context.font = 'bold 12px 微软雅黑';
+    context.font = font12
     context.textAlign = "left"
     context.fillStyle = 'green';
     var str1 = "最新日期:" + dotValueList[0].datas[0].date + "    " + "[" + returnValue.stockInfo.code + "]" + returnValue.stockInfo.name;
@@ -299,41 +311,48 @@ function DrawPointAndFigure(returnValue)
     var rate = (latticeValue * 100 / returnValue.stockInfo.maxPrice).toFixed(2) + "%~" + parseFloat(latticeValue * 100 / returnValue.stockInfo.minPrice).toFixed(2) + "%";
     var str3 = "最高价:" + returnValue.stockInfo.maxPrice + "    格幅:" + rate;
     context.fillText(str3, space * xIndex - strWhith, space * yIndex + space * (dateIndex + 3));
+
+    context.fillStyle = 'SlateBlue'
+    context.fillText("缩放倍数:" + scale, space * xIndex - strWhith, space * yIndex + space * (dateIndex + 4));
     context.restore();
 }
 //画K线 成交量 和 维斯波
 function DrawKLine(curList, stockInfo)
 {
     //索引偏移量
-    var offsetX = 4;
-    var offsetY = 0;
-    var offsetXL = 10;
-    var offsetYL = 3;
+    var offsetX = 6;
+    var offsetY = 1;
+    var offsetXL = 9;
+    var offsetYL = 6;
     //成交量占据格数
-    var volumeIndex = 5;
-    //波形图占格
-    var waveIndex = 5;
+    var volumeIndex = 3;
+    //维斯波占格
+    var waveIndex = 3;
+    //点数图为标准的维斯波占格
+    var waveDotIndex = 3;
     var dateIndex = 2;
-    //minSpace=20;
-    //maxSpace = 27;
-    space = minSpace;
+    space = minSpace * scale;
+
+    //字体
+    var font10 = 'bold ' + 10 * scale + 'px 宋体';
+    var font12 = 'bold ' + 12 * scale + 'px 宋体';
 
     var yIndex = stockInfo.endIndex - stockInfo.startIndex + offsetY;
     var xIndex = curList.length + offsetX;
     var spacex = canvasK.width / xIndex;
     var spacey = canvasK.height / yIndex;
-    if (spacex > minSpace && spacey > minSpace)
+    if (spacex > minSpace * scale && spacey > minSpace * scale)
     {
-        space = parseInt(spacey > spacex ? spacex : spacey);
-        if (space > maxSpace)
+        space = parseInt(spacey > spacex ? spacex : spacey) * scale;
+        if (space > maxSpace * scale)
         {
-            space = maxSpace;
+            space = maxSpace * scale;
         }
     }
-    space = spaceK;
+    spaceK = space;
     var spaceX = space / 2;
     canvasK.width = spaceX * (xIndex + offsetXL);
-    canvasK.height = space * (yIndex + dateIndex + offsetYL + volumeIndex + waveIndex);
+    canvasK.height = space * (yIndex + dateIndex + offsetYL + volumeIndex + waveIndex + waveDotIndex);
     var offsetXSpace = offsetX * spaceX;
     var offsetYSpace = offsetY * space;
 
@@ -346,33 +365,43 @@ function DrawKLine(curList, stockInfo)
     {
         canvasK.style.width = width + "px";
         canvasK.style.height = height + "px";
-        canvasK.height = height * devicePixelRatio;
-        canvasK.width = width * devicePixelRatio;
-        contextK.scale(devicePixelRatio, devicePixelRatio);
+        canvasK.height = height * devicePixelRatio * 2;
+        canvasK.width = width * devicePixelRatio * 2;
+        contextK.scale(devicePixelRatio * 2, devicePixelRatio * 2);
     }
 
+    //0点
+    contextK.beginPath();
+    contextK.arc(offsetXSpace, offsetYSpace, 2, 0, 2 * Math.PI);
+    contextK.fillStyle = "black";
+    contextK.fill();
+    contextK.stroke();
     //绘制水平方向的网格线 点数图最低点向上取整,在K线图上补回来
     for (var y = 0; y <= yIndex - offsetY; y++)
     {
-        //开启路径
-        contextK.beginPath()
-        contextK.moveTo(offsetXSpace, space * y + offsetYSpace)
-        contextK.lineTo(spaceX * xIndex, space * y + offsetYSpace)
-        contextK.stroke()
-
+        if (scale > 0.5)
+        {
+            //开启路径
+            contextK.beginPath()
+            contextK.moveTo(offsetXSpace, space * y + offsetYSpace)
+            contextK.lineTo(spaceX * xIndex, space * y + offsetYSpace)
+            contextK.stroke()
+        }
         //标刻度
         contextK.save();
         contextK.fillStyle = 'OrangeRed'
-        contextK.font = 'bold 10px 微软雅黑'
+        contextK.font = font10
         contextK.textBaseline = 'right';
         //设置文本的垂直对齐方式
         contextK.textAlign = 'right';
-        var str = (Math.round(stockInfo.minPrice, 2) + (yIndex - y - offsetY) * latticeValue).toFixed(2);
+        var maxPriceNew = ((parseInt(stockInfo.maxPrice / 0.05) + 1) * 0.05).toFixed(2);
+        //var str = (Math.round(stockInfo.minPrice, 2) + (yIndex - y - offsetY) * latticeValue).toFixed(2);
+        var str = (maxPriceNew - y * latticeValue).toFixed(2);
         contextK.fillText(str, offsetXSpace - spaceX / 2, y * space + offsetYSpace);
         contextK.textAlign = 'left';
 
         //最后列刻度后移一格 好看点
-        contextK.fillText(str, spaceX * xIndex, y * space + offsetYSpace);
+        contextK.fillText(str, spaceX * xIndex + spaceX, y * space + offsetYSpace);
         contextK.restore();
     }
     {
@@ -399,22 +428,32 @@ function DrawKLine(curList, stockInfo)
         // contextK.fillText(stockInfo.minVolume, spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space);
         contextK.save();
         contextK.fillStyle = 'green'
-        contextK.font = 'bold 15px 微软雅黑'
+        contextK.font = font12
         contextK.textBaseline = 'right';
         //设置文本的垂直对齐方式
         contextK.textAlign = 'left';
         contextK.fillText(" 成交量", spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space / 2);
-        contextK.fillText(" 波形图", spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space / 2);
+        contextK.fillText(" 常规维斯波", spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space / 2);
+        contextK.fillText(" 点数维斯波", spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space / 2);
         // code name 
-        var str1 = stockInfo.code + " " + stockInfo.name;
+        var str1 = stockInfo.code + "           " + stockInfo.name;
         var strWhith = context.measureText(str1).width;
 
-        contextK.fillText(str1, spaceX * xIndex - strWhith * 2, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + space * 1.5);
-        contextK.fillText("周期:" + cycle, spaceX * xIndex - strWhith * 2, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + space * 2.5);
-        //波形图行
+        contextK.fillText(str1, spaceX * xIndex - strWhith * 3, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space + space * 1.5);
+        contextK.fillStyle = 'SlateBlue'
+        contextK.fillText("周期:" + cycle + "           缩放倍数: " + scale, spaceX * xIndex - strWhith * 3, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space + space * 2.5);
+        contextK.fillStyle = 'green'
+        var strWhith = context.measureText(str1).width;
+
+        var str2 = "最低价:" + stockInfo.minPrice + "    " + "单格值:" + latticeValue;
+        contextK.fillText(str2, spaceX * xIndex - strWhith * 3, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space + space * 3.5);
+        var rate = (latticeValue * 100 / stockInfo.maxPrice).toFixed(2) + "%~" + parseFloat(latticeValue * 100 / stockInfo.minPrice).toFixed(2) + "%";
+        var str3 = "最高价:" + stockInfo.maxPrice + "    格幅:" + rate;
+        contextK.fillText(str3, spaceX * xIndex - strWhith * 3, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space + space * 4.5);
+        //维斯波行
         contextK.beginPath()
-        contextK.moveTo(offsetXSpace, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space)
-        contextK.lineTo(spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space)
+        contextK.moveTo(offsetXSpace, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space)
+        contextK.lineTo(spaceX * xIndex, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space)
         contextK.stroke()
         contextK.restore();
 
@@ -429,7 +468,7 @@ function DrawKLine(curList, stockInfo)
             //开启路径
             contextK.beginPath()
             contextK.moveTo(offsetXSpace + x * spaceX, offsetYSpace)
-            contextK.lineTo(offsetXSpace + x * spaceX, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space)
+            contextK.lineTo(offsetXSpace + x * spaceX, space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + waveDotIndex * space)
             contextK.stroke()
         }
         // else
@@ -444,7 +483,7 @@ function DrawKLine(curList, stockInfo)
         // }
     }
     //画K线
-    contextK.font = 'bold 15px 微软雅黑'
+    contextK.font = font10
     contextK.textBaseline = 'middle';
     //设置文本的垂直对齐方式
     contextK.textAlign = 'center';
@@ -457,12 +496,12 @@ function DrawKLine(curList, stockInfo)
         var item = curList[i];
         var px = (i + 0.5) * spaceX + offsetXSpace;
         var startpx = (i + 0.1) * spaceX + offsetXSpace;
-        var startpy = ((yIndex - parseFloat(item.open) / parseFloat(latticeValue) + stockInfo.startIndex) * space);
-        //var endpx = (i + 0.7) * space;
-        var endpy = ((yIndex - parseFloat(item.close) / parseFloat(latticeValue) + stockInfo.startIndex) * space);
+        var maxIndex = parseFloat(stockInfo.maxPrice) / parseFloat(latticeValue);
+        var startpy = ((maxIndex + 1 - parseFloat(item.open) / parseFloat(latticeValue)) * space);
+        var endpy = ((maxIndex + 1 - parseFloat(item.close) / parseFloat(latticeValue)) * space);
 
-        var startpyHL = ((yIndex - parseFloat(item.low) / parseFloat(latticeValue) + stockInfo.startIndex) * space);
-        var endpyHL = ((yIndex - parseFloat(item.high) / parseFloat(latticeValue) + stockInfo.startIndex) * space);
+        var startpyHL = ((maxIndex + 1 - parseFloat(item.low) / parseFloat(latticeValue)) * space);
+        var endpyHL = ((maxIndex + 1 - parseFloat(item.high) / parseFloat(latticeValue)) * space);
         if (item.close >= item.open)
         {
             contextK.fillStyle = 'OrangeRed';
@@ -516,7 +555,7 @@ function DrawKLine(curList, stockInfo)
         {
             //日期 旋转
             contextK.fillStyle = "green"
-            contextK.font = 'bold 12px 微软雅黑';
+            contextK.font = font12;
             //translate 转换原点 这里一般填要转换点的位置
             //rotate 转换角度
             //fillText的位置不再是原来的位置，就是0,0
@@ -530,8 +569,8 @@ function DrawKLine(curList, stockInfo)
         var obj = {
             item: item,
             startpx: (i * spaceX + offsetXSpace),
-            startpyHL: startpyHL,
-            endpyHL: endpyHL,
+            startpyHL: startpyHL + space / 2,
+            endpyHL: endpyHL - space / 2,
             endpx: (i * spaceX + offsetXSpace + spaceX),
             space: space,
             spaceX: spaceX,
@@ -552,7 +591,7 @@ function DrawKLine(curList, stockInfo)
 
         var startpy = endpy - percent * volumeIndex * space;
         var pyheight = endpy - startpy;
-        if (parseFloat(item.close) > parseFloat(item.open))
+        if (parseFloat(item.close) >= parseFloat(item.open))
         {
             contextK.fillStyle = 'OrangeRed';
         }
@@ -567,7 +606,7 @@ function DrawKLine(curList, stockInfo)
         }
         else
         {
-            if (parseFloat(item.close) > parseFloat(item.open))
+            if (parseFloat(item.close) >= parseFloat(item.open))
             {
                 contextK.fillStyle = 'OrangeRed';
             }
@@ -580,44 +619,48 @@ function DrawKLine(curList, stockInfo)
         contextK.restore();
     }
 
-    //绘制波形图 维斯波
-    //获取波形图数据
+    //绘制维斯波
+    //获取维斯波数据
     var waveList = [];
     var waveObj = {
         volume: curList[0].volume,
         isUp: parseFloat(curList[0].close) > parseFloat(curList[0].open)
     };
     waveList.push(waveObj);
-    var minWave = curList[1].volume;
+    var minWave = curList[0].volume;
     var maxWave = minWave;
+    //涨跌幅
+    var increaseRate = curList[1].close / curList[0].close - 1;
     if (isWaveConect) //维斯波是否忽略小幅反向
     {
-        minWave = curList[1].volume * curList[1].close / curList[0].close;
+        minWave = curList[1].volume * increaseRate;
         maxWave = minWave;
     }
     for (var i = 1; i < curList.length; i++)
     {
         var wave = curList[i];
         var preWave = waveList[i - 1];
-        var isUp = parseFloat(wave.close) > parseFloat(curList[i - 1].close);
+        increaseRate = wave.close / curList[i - 1].close - 1;
+        var isUp = increaseRate > 0;
         //用于记录isUp的状态前后是否一致 主要用于小幅反向震动
         var isSame = true;
         var volume = parseInt(wave.volume);
 
         if (isWaveConect) //维斯波是否忽略小幅反向
         {
-            volume = parseInt(volume * wave.close / curList[i - 1].close);
+            //原则:小幅反向(如较大上涨中1%以内的低量下跌)
+            //     则成交量不加反而减去反向幅度的量
             if (preWave.isUp)
             {
                 if (!isUp) //前涨后低量小跌算涨
                 {
-                    var isInpercent = Math.abs(curList[i - 1].close - wave.close) / wave.close < (wavePercent / 100) && wave.volume < curList[i - 1].volume;
+                    var isInpercent = Math.abs(increaseRate) < wavePercent / 100 && wave.volume < curList[i - 1].volume;
                     if (isInpercent)
                     {
                         isUp = true;
                         isSame = false;
                         //成交量按照反转幅度算
-                        volume = parseInt(volume * Math.abs(wave.close / curList[i - 1].close - 1));
+                        volume = parseInt(volume * Math.abs(increaseRate));
                     }
                 }
             }
@@ -625,18 +668,16 @@ function DrawKLine(curList, stockInfo)
             {
                 if (isUp) //前跌后低量小涨算跌
                 {
-                    var isInpercent = Math.abs(wave.close - curList[i - 1].close) / wave.close < (wavePercent / 100) && wave.volume < curList[i - 1].volume;
+                    var isInpercent = Math.abs(increaseRate) < (wavePercent / 100) && wave.volume < curList[i - 1].volume;
                     if (isInpercent)
                     {
                         isUp = false;
                         isSame = false;
-                        volume = parseInt(volume * Math.abs(wave.close / curList[i - 1].close - 1));
+                        volume = parseInt(volume * Math.abs(increaseRate));
                     }
                 }
             }
-        }
-        if (isWaveConect) //维斯波是否忽略小幅反向
-        {
+
             if (preWave.isUp == isUp)
             {
                 if (isSame)
@@ -675,7 +716,7 @@ function DrawKLine(curList, stockInfo)
     }
     var waveStartpy = space * yIndex + space * dateIndex + volumeIndex * space + space * 1 / 10;
 
-    //绘制维斯波波形图 
+    //绘制维斯波 根据收盘价之间的涨跌状态绘制维斯波
     for (var i = 1; i < waveList.length; i++)
     {
         contextK.save();
@@ -705,8 +746,193 @@ function DrawKLine(curList, stockInfo)
         }
         contextK.restore();
     }
+
+
+
+    //根据点数图的规则绘制维斯波
+    //点数图数据处理
+    //dotValueList
+    dotValueList.reverse();
+    var dotDateSortList = []; //点数图极点集合
+
+    var isUp = dotValueList[0].isUp;
+    var date = curList[0].date;
+    // var item0 = {
+    //     isUp: isUp,
+    //     date: date,
+    // }
+    // dotDateSortList.push(item0);
+
+    for (var i = 0; i < dotValueList.length; i++)
+    {
+        var obj = dotValueList[i];
+        if (isUp != obj.isUp)
+        {
+            var item = {
+                isUp: isUp,
+                date: date,
+            }
+            dotDateSortList.push(item);
+
+        }
+        isUp = obj.isUp;
+        date = obj.datas[0].date;
+    }
+    //最后一个
+    var item = {
+        isUp: isUp,
+        date: date
+    }
+    dotDateSortList.push(item);
+
+    //获取点数图维斯波数据
+    var waveDotList = [];
+
+    var minWaveDotVol = curList[0].volume;
+    var maxWaveDotVol = minWaveDotVol;
+    var dotIndex = 0;
+    var dateSortObj = dotDateSortList[dotIndex];
+    var dotIsUp = dateSortObj.isUp;
+    var curVolume = 0;
+    for (var i = 0; i < curList.length; i++)
+    {
+        var item = curList[i];
+        var date = dateSortObj.date;
+        if (item.date == date)
+        {
+            curVolume = parseInt(curVolume) + parseInt(item.volume);
+            var obj = {
+                volume: curVolume,
+                isUp: dotIsUp
+            }
+            waveDotList.push(obj);
+            dotIndex = dotIndex + 1;
+            if (dotDateSortList.length > dotIndex)
+            {
+                dateSortObj = dotDateSortList[dotIndex];
+                dotIsUp = dateSortObj.isUp;
+            }
+
+            if (curVolume < minWaveDotVol)
+            {
+                minWaveDotVol = curVolume;
+            }
+            if (curVolume > maxWaveDotVol)
+            {
+                maxWaveDotVol = curVolume;
+            }
+            curVolume = 0;
+        }
+        else
+        {
+            curVolume = parseInt(curVolume) + parseInt(item.volume);
+            var obj = {
+                volume: curVolume,
+                isUp: dotIsUp
+            }
+            waveDotList.push(obj);
+            if (curVolume < minWaveDotVol)
+            {
+                minWaveDotVol = curVolume;
+            }
+            if (curVolume > maxWaveDotVol)
+            {
+                maxWaveDotVol = curVolume;
+            }
+        }
+    }
+
+
+    //绘制K线图高低点连线
+    var waveDotStartpy = space * yIndex + space * dateIndex + volumeIndex * space + waveIndex * space + space * 1 / 10;
+    var maxIndex = parseFloat(stockInfo.maxPrice) / parseFloat(latticeValue);
+    var lastDot = {
+        px: 0.5 * spaceX + offsetXSpace,
+        lowpx: ((maxIndex + 1 - parseFloat(curList[0].low) / parseFloat(latticeValue)) * space),
+        highpx: ((maxIndex + 1 - parseFloat(curList[0].high) / parseFloat(latticeValue)) * space)
+    };
+
+    //连线高低点
+
+    contextK.save();
+    contextK.strokeStyle = 'green';
+    contextK.lineWidth = 1;
+
+    dotIndex = 0;
+    dateSortObj = dotDateSortList[dotIndex];
+    for (var i = 0; i < curList.length; i++)
+    {
+        var dot = curList[i];
+        if (dot.date == dateSortObj.date)
+        {
+            var px = (i + 0.5) * spaceX + offsetXSpace;
+            var lowpx = ((maxIndex + 1 - parseFloat(dot.low) / parseFloat(latticeValue)) * space);
+            var highpx = ((maxIndex + 1 - parseFloat(dot.high) / parseFloat(latticeValue)) * space);
+            if (dateSortObj.isUp)
+            {
+                contextK.beginPath()
+                contextK.moveTo(lastDot.px, lastDot.lowpx)
+                contextK.lineTo(px, highpx)
+                contextK.stroke()
+            }
+            else
+            {
+                contextK.beginPath()
+                contextK.moveTo(lastDot.px, lastDot.highpx)
+                contextK.lineTo(px, lowpx)
+                contextK.stroke()
+            }
+
+            lastDot = {
+                px,
+                lowpx,
+                highpx
+            };
+
+            dotIndex = dotIndex + 1;
+            if (dotDateSortList.length > dotIndex)
+            {
+                dateSortObj = dotDateSortList[dotIndex];
+            }
+        }
+    }
+    contextK.restore();
+
+    //绘制点数图标准维斯波
+    for (var i = 1; i < waveDotList.length; i++)
+    {
+        contextK.save();
+        var wave = waveDotList[i];
+        var startpx = (i + 0.1) * spaceX + offsetXSpace;
+        var endpy = waveDotStartpy - space * 1 / 10 + waveDotIndex * space;
+        var percent = (wave.volume - minWaveDotVol) / (maxWaveDotVol - minWaveDotVol);
+
+        var startpy = endpy - percent * ((waveDotIndex - 1 / 10) * space);
+        var pyheight = endpy - startpy;
+        if (wave.isUp)
+        {
+            contextK.fillStyle = 'OrangeRed';
+        }
+        else
+        {
+            contextK.fillStyle = 'SlateBlue';
+        }
+        if (isKline)
+        {
+            contextK.fillRect(startpx + 0.35 * spaceX, startpy, spaceX * 0.3, pyheight);
+
+        }
+        else
+        {
+            contextK.fillRect(startpx + 0.399 * spaceX, startpy, lineWidth, pyheight);
+        }
+        contextK.restore();
+    }
+
+
+
+    // 选择默认的tab页
     var titles = document.getElementById('tab-header').getElementsByTagName('li')
-    // 遍历
     for (var i = 0; i < titles.length; i++)
     {
         var li = titles[i];
@@ -724,7 +950,7 @@ function DrawKLine(curList, stockInfo)
             //tab靠后
             var ul = document.getElementById("tab-header").getElementsByTagName('ul')[0];
             var paddingLeft = style.width.replace('px', '');
-            paddingLeft = (parseInt(paddingLeft) - 150) + "px"
+            paddingLeft = (parseInt(paddingLeft) - 250) + "px"
             ul.style.paddingLeft = paddingLeft;
             scrollBottomAndRightTag(document.getElementById("right"));
         }
@@ -772,7 +998,7 @@ function CalLatticeValue(basePrice)
     }
     else
     {
-        return parseInt(parseInt(basePrice * 0.03) / 10) * 10 + 10;
+        return parseInt(parseInt(basePrice * percentLatticeValue / 100) / 10) * 10 + 10;
     }
 }
 
@@ -1166,19 +1392,18 @@ function InitData(result)
             maxVolume = item.volume;
         }
     }
-    //最大刻度是0.05的倍数且比最大值稍大 即便于观察，又可以解决刚好卡线的尴尬问题
-    maxPrice = (parseInt(maxPrice / 0.05) + 1) * 0.05;
+
     curList = dataList;
     //单格值
-    if (latticeValue == 0)
+    if (latticeValue == 0 || isPercentLattice)
     {
         //latticeValue = CalLatticeValue((parseFloat(minPrice) + parseFloat(maxPrice)) / 2);
         latticeValue = CalLatticeValue(curList[curList.length - 1].close);
         var gridNum = parseInt((maxPrice - minPrice) / latticeValue);
-        if (gridNum < 5)
-        {
-            latticeValue = (latticeValue * 0.7).toFixed(2);
-        }
+        // if (gridNum < 5)
+        // {
+        //     latticeValue = (latticeValue * 0.7).toFixed(2);
+        // }
         document.getElementById("latticeValue").value = latticeValue;
         latticeValue
     }
@@ -1198,7 +1423,9 @@ function InitData(result)
     //开始值向下取整
     var startIndex = getGridIndexCurrent(stockInfo, minPrice, true);
     //结束值向上取整
-    var endIndex = getGridIndexCurrent(stockInfo, maxPrice, false);
+    //最大刻度是0.05的倍数且比最大值稍大 即便于观察，又可以解决刚好卡线的尴尬问题
+    var maxPriceNew = ((parseInt(maxPrice / 0.05) + 1) * 0.05).toFixed(2);
+    var endIndex = getGridIndexCurrent(stockInfo, maxPriceNew, false);
 
     stockInfo.startIndex = startIndex;
     stockInfo.endIndex = endIndex;
@@ -1224,17 +1451,100 @@ function loadStockList()
     //reader.onload = function(e)
     //{
     //stockArray=new Array(stockList.length);
-    var stockList = stocklistData;
-    //添加下拉列表数据
-    for (var i = 0; i < stockList.length; i++)
+    if (isOnlineStockList)
     {
-        var obj = stockList[i]; //.split(",");
-        var code = obj[0];
-        var name = obj[1];
-        var spell = obj[2];
-        html = "<option label=\"" + name + "." + spell + "\" value=\"" + code + "\"  id=\"" + name + "\" />";
-        $('#stock_list').append(html);
-        stockArray[code] = obj;
+        var url = "http://26.push2.eastmoney.com/api/qt/clist/get?cb=jQuery&pn=1&pz=5000&po=1&np=1&fltt=2&invt=2&fid=f3&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f13,f14";
+
+        return getUrlContent("GET", url, "text").then(function(result)
+        {
+            if (result == null || result == "")
+            {
+                alert("未获取到数据,请检查网络连接状况或者浏览器是否允许跨域访问!");
+                return;
+            }
+            //东方财富的数据不是标准json
+            //获得字符串的开始位置
+            var start = result.indexOf('[');
+            var end = result.indexOf(']');
+            //日期,股票代码,名称,收盘价,最高价,最低价,开盘价,前收盘,成交量,成交金额 date,open,close,high,low,volume,amount
+            var regstr = new RegExp('"', "g");
+            var regstr1 = new RegExp('{', "g");
+            var regstr2 = new RegExp('}', "g");
+            var regstr3 = new RegExp('f12', "g");
+            var regstr4 = new RegExp('f13', "g");
+            var regstr5 = new RegExp('f14', "g");
+            var regstr6 = new RegExp(':', "g");
+            var str = result.substring(start + 1, end).replace(regstr, '')
+            str = str.replace(regstr1, '')
+            str = str.replace(regstr2, '')
+            str = str.replace(regstr3, '')
+            str = str.replace(regstr4, '')
+            str = str.replace(regstr5, '')
+            str = str.replace(regstr6, '')
+
+            var dataList = str.split(',');
+
+            var reg = new RegExp('-', "g");
+            var reg1 = new RegExp(':', "g");
+            var reg2 = new RegExp(' ', "g");
+            var lastClose = 0;
+            var list = [];
+            var distance = 3;
+
+            //指数
+            var indexData = [
+                ["000001", "上证指数", "SZZS", "sh"],
+                ["399001", "深证指数", "SZZS", "sz"],
+                ["399005", "中小板", "ZXB", "sz"],
+                ["000300", "沪深300", "HS3", "sh"]
+            ];
+            for (var i = 0; i < indexData.length; i++)
+            {
+                var obj = indexData[i]; //.split(",");
+                var code = obj[0];
+                var name = obj[1];
+                var spell = obj[2];
+                html = "<option label=\"" + name + "." + spell + "\" value=\"" + code + "\"  id=\"" + name + "\" />";
+                $('#stock_list').append(html);
+                stockArray[code] = obj;
+            }
+            for (var i = 0; i < dataList.length / distance; i++)
+            {
+
+                var code0 = dataList[i * distance];
+                var type0 = dataList[i * distance + 1];
+                var name0 = dataList[i * distance + 2];
+                var spell = makePy(name0)[0];
+                if (code0 == "000001")
+                {
+                    continue
+                }
+                html = "<option label=\"" + name0 + "." + spell + "\" value=\"" + code0 + "\"  id=\"" + name0 + "\" />";
+                $('#stock_list').append(html);
+                type0 = (type0 == "1" ? "sh" : "sz")
+                var obj = [];
+                obj[0] = code0;
+                obj[1] = name0;
+                obj[2] = spell;
+                obj[3] = type0;
+                stockArray[code0] = obj;
+            }
+        });
+    }
+    else
+    {
+        var stockList = stocklistData;
+        //添加下拉列表数据
+        for (var i = 0; i < stockList.length; i++)
+        {
+            var obj = stockList[i]; //.split(",");
+            var code = obj[0];
+            var name = obj[1];
+            var spell = obj[2];
+            html = "<option label=\"" + name + "." + spell + "\" value=\"" + code + "\"  id=\"" + name + "\" />";
+            $('#stock_list').append(html);
+            stockArray[code] = obj;
+        }
     }
     //}
 }
@@ -1524,7 +1834,7 @@ function onMouseMoveK(e)
             drawToolTipK(tip, px, py);
         }
     }
-    catch(err)
+    catch (err)
     {
         return;
     }
@@ -1533,10 +1843,11 @@ function onMouseMoveK(e)
 
 function drawToolTipK(tip, x, y)
 {
+    tip.style.display = 'none';
     var i = parseInt((x - tableK[0].offsetXSpace) / tableK[0].spaceX);
     var dot = tableK[i];
     //是否处于K线范围内
-    if (!(y >= dot.endpyHL && y <= dot.startpyHL))
+    if (!(y >= dot.endpyHL && y <= dot.startpyHL) || (x < dot.startpx + dot.spaceX / 3 || x > dot.endpx - dot.spaceX / 3))
     {
         return;
     }
@@ -1566,16 +1877,163 @@ function drawToolTipK(tip, x, y)
     var height = row * 15;
     tip.style.cssText = 'font-family:Arial,"宋体";font-size:8pt';
     tip.style.position = 'absolute';
-    tip.style.zIndex = 4;
+    tip.style.zIndex = 100;
     tip.style.backgroundColor = 'white';
     tip.style.border = '1px solid gray';
     tip.style.width = width + 'px';
     tip.style.height = height + 'px';
-    tip.style.left = (x + 20) + 'px';
+    if (x + width > canvasK.offsetWidth)
+    {
+        tip.style.left = (x - width - 20) + 'px';
+
+    }
+    else
+    {
+        tip.style.left = (x + 20) + 'px';
+    }
     tip.style.top = (y + 5) + 'px';
 
     tip.style.display = 'block';
     tip.innerHTML = tipHtml;
+}
+
+function replaceStr(str, searchValue, replaceValue)
+{
+    var regExp = new RegExp(searchValue, "g");
+    return str.replace(regExp, replaceValue);
+}
+
+var originalUserAgent = navigator.userAgent;
+
+function fillInfo()
+{
+    var iwc = "http://www.iwencai.com/unifiedwap/result?w=" + code + "&querytype=stock&issugs"
+    var sl = "https://m.xuangubao.cn/stocklabel/" + code + "." + (type == "sh" ? "ss" : "sz") + "?mine=true"
+    var dfcf = "http://quote.eastmoney.com/" + type + code + ".html"
+    var xgb = "https://xuangubao.cn/stock/" + code + (type == "sh" ? ".SS" : ".SZ");
+
+    var sl1 = "https://api-ddc-wscn.xuangubao.cn/extract/stock_risk/full_desc?stock_code=" + code + (type == "sh" ? ".ss" : ".sz");
+    document.getElementById("iwc").href = iwc;
+    document.getElementById("dfcf").href = dfcf;
+    document.getElementById("xgb").href = xgb;
+    document.getElementById("sl").href = sl;
+    //var mobileUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25";
+    //setUserAgent(window, mobileUserAgent);
+    return getUrlContent("GET", sl1, "json").then(function(jsonStr)
+    {
+        if (jsonStr == null || jsonStr == "")
+        {
+            alert("未获取到数据,请检查网络连接状况或者浏览器是否允许跨域访问!");
+            return;
+        }
+        console.log(jsonStr);
+        if (jsonStr.message == "OK")
+        {
+            var risk_level = jsonStr.data.risk_level;
+            switch (risk_level)
+            {
+                case 0:
+                    risk_level = "<a style=\"color:green\">风险级别：安全";
+                    break;
+                case 1:
+                    risk_level = "<a style=\"color:#ff7575;font-weight:bold\">风险级别：低风险";
+                    break;
+                case 2:
+                    risk_level = "<a style=\"color:#FF5151;font-weight:bold\">风险级别：中风险";
+                    break;
+                case 3:
+                    risk_level = "<a style=\"color:red;font-weight:bold\">风险级别：高风险";
+                    break;
+
+            }
+            var html =  "<a style=\"color:blue\">[" + code+"] "+name + "</a></br>" +
+                "<a>星级：" + jsonStr.data.stars + "</a>" +
+                risk_level + "</a></br>" +
+                "<a style=\"color:red\">危险项：" + jsonStr.data.risk_count + "</a>" +
+                "<a style=\"color:green\">安全项：" + jsonStr.data.safe_count + "</a>"
+            $('#riskAssessment').html("");
+            $('#riskAssessment').append(html);
+            var htmlTable = "<table id=\"riskInfoTable\"><tr><th>星级</th><th>权重</th><th>类别</th><th>结论</th><th>描述</th></tr>";
+            for (var i = 0; i < jsonStr.data.items.length; i++)
+            {
+                var item = jsonStr.data.items[i];
+                var tr = "<tr>";
+                var str = item["risk_name"];
+                var reg1 = RegExp(/退市风险/);
+                var reg2 = RegExp(/公司负面消息/);
+                var reg3 = RegExp(/监管处罚/);
+                if ((str.match(reg1) || str.match(reg2) || str.match(reg3))&& item["title"]!="无")
+                {
+                    tr = "<tr style=\"color:red;font-weight:bold\">";
+                }
+                htmlTable = htmlTable + tr +
+                    "<th>" + item["stars"] + "</th>" +
+                    "<th>" + item["weight"] + "</th>" +
+                    "<th>" + item["risk_name"] + "</th>" +
+                    "<th>" + item["title"] + "</th>" +
+                    "<th>" + item["description"] + "</th>" +
+                    "</tr>"
+            }
+            htmlTable = htmlTable + "</table>";
+            $('#riskAssessment').append(htmlTable);
+            // if (jsonStr.data.items.length > 0)
+            // {
+            //     document.getElementById("riskInfoTable").style.marginTop = "-100px";
+            // }
+        }
+    });
+}
+
+function changeUserAgent(userAgent)
+{
+    Object.defineProperty(navigator, 'userAgent',
+    {
+        value: userAgent,
+        writable: false
+    });
+}
+
+function setUserAgent(window, userAgent)
+{
+    // Works on Firefox, Chrome, Opera and IE9+
+    if (navigator.__defineGetter__)
+    {
+        navigator.__defineGetter__('userAgent', function()
+        {
+            return userAgent;
+        });
+    }
+    else if (Object.defineProperty)
+    {
+        Object.defineProperty(navigator, 'userAgent',
+        {
+            get: function()
+            {
+                return userAgent;
+            }
+        });
+    }
+    // Works on Safari
+    if (window.navigator.userAgent !== userAgent)
+    {
+        var userAgentProp = {
+            get: function()
+            {
+                return userAgent;
+            }
+        };
+        try
+        {
+            Object.defineProperty(window.navigator, 'userAgent', userAgentProp);
+        }
+        catch (e)
+        {
+            window.navigator = Object.create(navigator,
+            {
+                userAgent: userAgentProp
+            });
+        }
+    }
 }
 
 function generate()
@@ -1697,8 +2155,9 @@ function generate()
     type = obj[3];
     DrawOX();
     document.getElementById("btGenerate").focus();
-
+    fillInfo()
 };
+
 //未用
 function fetchUrlContent(url)
 {
@@ -1785,17 +2244,17 @@ function getOnlineData()
     var len = 250;
     if (dataSource == "新浪")
     {
-        var scale;
+        var klt;
         if (cycle == "日")
         {
-            scale = 240;
+            klt = 240;
             var starttime = new Date(document.getElementById("beginDate").value).getTime();
             var endtime = new Date(document.getElementById("endDate").value).getTime();
             len = parseInt(Math.ceil((endtime - starttime) / (1000 * 60 * 60 * 24)) * 5 / 7);
         }
         else if (cycle == "周")
         {
-            scale = 1200;
+            klt = 1200;
         }
         else if (cycle == "月" || cycle == "季" || cycle == "年")
         {
@@ -1804,9 +2263,9 @@ function getOnlineData()
         }
         else
         {
-            scale = parseInt(cycle.replace('分钟', ''))
+            klt = parseInt(cycle.replace('分钟', ''))
         }
-        var url = "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=" + type + code + "&scale=" + scale + "&ma=no&datalen=" + len;
+        var url = "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=" + type + code + "&scale=" + klt + "&ma=no&datalen=" + len;
 
         return getUrlContent("GET", url, "json").then(function(result)
         {
@@ -1838,26 +2297,26 @@ function getOnlineData()
     }
     else if (dataSource == "东方财富")
     {
-        var scale;
+        var klt;
         if (cycle == "日")
         {
-            scale = 101;
+            klt = 101;
         }
         else if (cycle == "周")
         {
-            scale = 102;
+            klt = 102;
         }
         else if (cycle == "月")
         {
-            scale = 103;
+            klt = 103;
         }
         else
         {
-            scale = parseInt(cycle.replace('分钟', ''))
+            klt = parseInt(cycle.replace('分钟', ''))
         }
 
         var typeNum = (type == "sh" ? "1" : "0");
-        var url = "http://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery&secid=" + typeNum + "." + code + "&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57&klt=" + scale + "&fqt=" + rehabilitation + "&beg=" + beginDate + "&end=" + endDate;
+        var url = "http://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery&secid=" + typeNum + "." + code + "&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57&klt=" + klt + "&fqt=" + rehabilitation + "&beg=" + beginDate + "&end=" + endDate;
 
         return getUrlContent("GET", url, "text").then(function(result)
         {
@@ -1896,4 +2355,454 @@ function getOnlineData()
             return list;
         });
     }
+}
+//获取拼音首字母
+function makePy(str)
+{
+    if (typeof(str) != "string")
+    {
+        throw new Error(-1, "\u51fd\u6570makePy\u9700\u8981\u5b57\u7b26\u4e32\u7c7b\u578b\u53c2\u6570!");
+    }
+    var arrResult = new Array(); //保存中间结果的数组
+    for (var i = 0, len = str.length; i < len; i++)
+    {
+        //获得unicode码
+        var ch = str.charAt(i);
+        //检查该unicode码是否在处理范围之内,在则返回该码对映汉字的拼音首字母,不在则调用其它函数处理
+        arrResult.push(checkCh(ch));
+    }
+    //处理arrResult,返回所有可能的拼音首字母串数组
+
+    return mkRslt(arrResult);
+
+}
+
+function checkCh(ch)
+{
+    {
+        var strChineseFirstPY =
+            "YDYQSXMWZSSXJBYMGCCZQPSSQBYCDSCDQLDYLYBSSJGYZZJJFKCCLZDHWDWZJLJPFYYNWJJTMYHZWZHFLZPPQHGSCYYYNJQYXXGJHHSDSJNKKTMOMLCRXYPSNQSECCQZGGLLYJLMYZZSECYKYYHQWJSSGGYXYZYJWWKDJHYCHMYXJTLXJYQBYXZLDWRDJRWYSRLDZJPCBZJJBRCFTLECZSTZFXXZHTRQHYBDLYCZSSYMMRFMYQZPWWJJYFCRWFDFZQPYDDWYXKYJAWJFFXYPSFTZYHHYZYSWCJYXSCLCXXWZZXNBGNNXBXLZSZSBSGPYSYZDHMDZBQBZCWDZZYYTZHBTSYYBZGNTNXQYWQSKBPHHLXGYBFMJEBJHHGQTJCYSXSTKZHLYCKGLYSMZXYALMELDCCXGZYRJXSDLTYZCQKCNNJWHJTZZCQLJSTSTBNXBTYXCEQXGKWJYFLZQLYHYXSPSFXLMPBYSXXXYDJCZYLLLSJXFHJXPJBTFFYABYXBHZZBJYZLWLCZGGBTSSMDTJZXPTHYQTGLJSCQFZKJZJQNLZWLSLHDZBWJNCJZYZSQQYCQYRZCJJWYBRTWPYFTWEXCSKDZCTBZHYZZYYJXZCFFZZMJYXXSDZZOTTBZLQWFCKSZSXFYRLNYJMBDTHJXSQQCCSBXYYTSYFBXDZTGBCNSLCYZZPSAZYZZSCJCSHZQYDXLBPJLLMQXTYDZXSQJTZPXLCGLQTZWJBHCTSYJSFXYEJJTLBGXSXJMYJQQPFZASYJNTYDJXKJCDJSZCBARTDCLYJQMWNQNCLLLKBYBZZSYHQQLTWLCCXTXLLZNTYLNEWYZYXCZXXGRKRMTCNDNJTSYYSSDQDGHSDBJGHRWRQLYBGLXHLGTGXBQJDZPYJSJYJCTMRNYMGRZJCZGJMZMGXMPRYXKJNYMSGMZJYMKMFXMLDTGFBHCJHKYLPFMDXLQJJSMTQGZSJLQDLDGJYCALCMZCSDJLLNXDJFFFFJCZFMZFFPFKHKGDPSXKTACJDHHZDDCRRCFQYJKQCCWJDXHWJLYLLZGCFCQDSMLZPBJJPLSBCJGGDCKKDEZSQCCKJGCGKDJTJDLZYCXKLQSCGJCLTFPCQCZGWPJDQYZJJBYJHSJDZWGFSJGZKQCCZLLPSPKJGQJHZZLJPLGJGJJTHJJYJZCZMLZLYQBGJWMLJKXZDZNJQSYZMLJLLJKYWXMKJLHSKJGBMCLYYMKXJQLBMLLKMDXXKWYXYSLMLPSJQQJQXYXFJTJDXMXXLLCXQBSYJBGWYMBGGBCYXPJYGPEPFGDJGBHBNSQJYZJKJKHXQFGQZKFHYGKHDKLLSDJQXPQYKYBNQSXQNSZSWHBSXWHXWBZZXDMNSJBSBKBBZKLYLXGWXDRWYQZMYWSJQLCJXXJXKJEQXSCYETLZHLYYYSDZPAQYZCMTLSHTZCFYZYXYLJSDCJQAGYSLCQLYYYSHMRQQKLDXZSCSSSYDYCJYSFSJBFRSSZQSBXXPXJYSDRCKGJLGDKZJZBDKTCSYQPYHSTCLDJDHMXMCGXYZHJDDTMHLTXZXYLYMOHYJCLTYFBQQXPFBDFHHTKSQHZYYWCNXXCRWHOWGYJLEGWDQCWGFJYCSNTMYTOLBYGWQWESJPWNMLRYDZSZTXYQPZGCWXHNGPYXSHMYQJXZTDPPBFYHZHTJYFDZWKGKZBLDNTSXHQEEGZZYLZMMZYJZGXZXKHKSTXNXXWYLYAPSTHXDWHZYMPXAGKYDXBHNHXKDPJNMYHYLPMGOCSLNZHKXXLPZZLBMLSFBHHGYGYYGGBHSCYAQTYWLXTZQCEZYDQDQMMHTKLLSZHLSJZWFYHQSWSCWLQAZYNYTLSXTHAZNKZZSZZLAXXZWWCTGQQTDDYZTCCHYQZFLXPSLZYGPZSZNGLNDQTBDLXGTCTAJDKYWNSYZLJHHZZCWNYYZYWMHYCHHYXHJKZWSXHZYXLYSKQYSPSLYZWMYPPKBYGLKZHTYXAXQSYSHXASMCHKDSCRSWJPWXSGZJLWWSCHSJHSQNHCSEGNDAQTBAALZZMSSTDQJCJKTSCJAXPLGGXHHGXXZCXPDMMHLDGTYBYSJMXHMRCPXXJZCKZXSHMLQXXTTHXWZFKHCCZDYTCJYXQHLXDHYPJQXYLSYYDZOZJNYXQEZYSQYAYXWYPDGXDDXSPPYZNDLTWRHXYDXZZJHTCXMCZLHPYYYYMHZLLHNXMYLLLMDCPPXHMXDKYCYRDLTXJCHHZZXZLCCLYLNZSHZJZZLNNRLWHYQSNJHXYNTTTKYJPYCHHYEGKCTTWLGQRLGGTGTYGYHPYHYLQYQGCWYQKPYYYTTTTLHYHLLTYTTSPLKYZXGZWGPYDSSZZDQXSKCQNMJJZZBXYQMJRTFFBTKHZKBXLJJKDXJTLBWFZPPTKQTZTGPDGNTPJYFALQMKGXBDCLZFHZCLLLLADPMXDJHLCCLGYHDZFGYDDGCYYFGYDXKSSEBDHYKDKDKHNAXXYBPBYYHXZQGAFFQYJXDMLJCSQZLLPCHBSXGJYNDYBYQSPZWJLZKSDDTACTBXZDYZYPJZQSJNKKTKNJDJGYYPGTLFYQKASDNTCYHBLWDZHBBYDWJRYGKZYHEYYFJMSDTYFZJJHGCXPLXHLDWXXJKYTCYKSSSMTWCTTQZLPBSZDZWZXGZAGYKTYWXLHLSPBCLLOQMMZSSLCMBJCSZZKYDCZJGQQDSMCYTZQQLWZQZXSSFPTTFQMDDZDSHDTDWFHTDYZJYQJQKYPBDJYYXTLJHDRQXXXHAYDHRJLKLYTWHLLRLLRCXYLBWSRSZZSYMKZZHHKYHXKSMDSYDYCJPBZBSQLFCXXXNXKXWYWSDZYQOGGQMMYHCDZTTFJYYBGSTTTYBYKJDHKYXBELHTYPJQNFXFDYKZHQKZBYJTZBXHFDXKDASWTAWAJLDYJSFHBLDNNTNQJTJNCHXFJSRFWHZFMDRYJYJWZPDJKZYJYMPCYZNYNXFBYTFYFWYGDBNZZZDNYTXZEMMQBSQEHXFZMBMFLZZSRXYMJGSXWZJSPRYDJSJGXHJJGLJJYNZZJXHGXKYMLPYYYCXYTWQZSWHWLYRJLPXSLSXMFSWWKLCTNXNYNPSJSZHDZEPTXMYYWXYYSYWLXJQZQXZDCLEEELMCPJPCLWBXSQHFWWTFFJTNQJHJQDXHWLBYZNFJLALKYYJLDXHHYCSTYYWNRJYXYWTRMDRQHWQCMFJDYZMHMYYXJWMYZQZXTLMRSPWWCHAQBXYGZYPXYYRRCLMPYMGKSJSZYSRMYJSNXTPLNBAPPYPYLXYYZKYNLDZYJZCZNNLMZHHARQMPGWQTZMXXMLLHGDZXYHXKYXYCJMFFYYHJFSBSSQLXXNDYCANNMTCJCYPRRNYTYQNYYMBMSXNDLYLYSLJRLXYSXQMLLYZLZJJJKYZZCSFBZXXMSTBJGNXYZHLXNMCWSCYZYFZLXBRNNNYLBNRTGZQYSATSWRYHYJZMZDHZGZDWYBSSCSKXSYHYTXXGCQGXZZSHYXJSCRHMKKBXCZJYJYMKQHZJFNBHMQHYSNJNZYBKNQMCLGQHWLZNZSWXKHLJHYYBQLBFCDSXDLDSPFZPSKJYZWZXZDDXJSMMEGJSCSSMGCLXXKYYYLNYPWWWGYDKZJGGGZGGSYCKNJWNJPCXBJJTQTJWDSSPJXZXNZXUMELPXFSXTLLXCLJXJJLJZXCTPSWXLYDHLYQRWHSYCSQYYBYAYWJJJQFWQCQQCJQGXALDBZZYJGKGXPLTZYFXJLTPADKYQHPMATLCPDCKBMTXYBHKLENXDLEEGQDYMSAWHZMLJTWYGXLYQZLJEEYYBQQFFNLYXRDSCTGJGXYYNKLLYQKCCTLHJLQMKKZGCYYGLLLJDZGYDHZWXPYSJBZKDZGYZZHYWYFQYTYZSZYEZZLYMHJJHTSMQWYZLKYYWZCSRKQYTLTDXWCTYJKLWSQZWBDCQYNCJSRSZJLKCDCDTLZZZACQQZZDDXYPLXZBQJYLZLLLQDDZQJYJYJZYXNYYYNYJXKXDAZWYRDLJYYYRJLXLLDYXJCYWYWNQCCLDDNYYYNYCKCZHXXCCLGZQJGKWPPCQQJYSBZZXYJSQPXJPZBSBDSFNSFPZXHDWZTDWPPTFLZZBZDMYYPQJRSDZSQZSQXBDGCPZSWDWCSQZGMDHZXMWWFYBPDGPHTMJTHZSMMBGZMBZJCFZWFZBBZMQCFMBDMCJXLGPNJBBXGYHYYJGPTZGZMQBQTCGYXJXLWZKYDPDYMGCFTPFXYZTZXDZXTGKMTYBBCLBJASKYTSSQYYMSZXFJEWLXLLSZBQJJJAKLYLXLYCCTSXMCWFKKKBSXLLLLJYXTYLTJYYTDPJHNHNNKBYQNFQYYZBYYESSESSGDYHFHWTCJBSDZZTFDMXHCNJZYMQWSRYJDZJQPDQBBSTJGGFBKJBXTGQHNGWJXJGDLLTHZHHYYYYYYSXWTYYYCCBDBPYPZYCCZYJPZYWCBDLFWZCWJDXXHYHLHWZZXJTCZLCDPXUJCZZZLYXJJTXPHFXWPYWXZPTDZZBDZCYHJHMLXBQXSBYLRDTGJRRCTTTHYTCZWMXFYTWWZCWJWXJYWCSKYBZSCCTZQNHXNWXXKHKFHTSWOCCJYBCMPZZYKBNNZPBZHHZDLSYDDYTYFJPXYNGFXBYQXCBHXCPSXTYZDMKYSNXSXLHKMZXLYHDHKWHXXSSKQYHHCJYXGLHZXCSNHEKDTGZXQYPKDHEXTYKCNYMYYYPKQYYYKXZLTHJQTBYQHXBMYHSQCKWWYLLHCYYLNNEQXQWMCFBDCCMLJGGXDQKTLXKGNQCDGZJWYJJLYHHQTTTNWCHMXCXWHWSZJYDJCCDBQCDGDNYXZTHCQRXCBHZTQCBXWGQWYYBXHMBYMYQTYEXMQKYAQYRGYZSLFYKKQHYSSQYSHJGJCNXKZYCXSBXYXHYYLSTYCXQTHYSMGSCPMMGCCCCCMTZTASMGQZJHKLOSQYLSWTMXSYQKDZLJQQYPLSYCZTCQQPBBQJZCLPKHQZYYXXDTDDTSJCXFFLLCHQXMJLWCJCXTSPYCXNDTJSHJWXDQQJSKXYAMYLSJHMLALYKXCYYDMNMDQMXMCZNNCYBZKKYFLMCHCMLHXRCJJHSYLNMTJZGZGYWJXSRXCWJGJQHQZDQJDCJJZKJKGDZQGJJYJYLXZXXCDQHHHEYTMHLFSBDJSYYSHFYSTCZQLPBDRFRZTZYKYWHSZYQKWDQZRKMSYNBCRXQBJYFAZPZZEDZCJYWBCJWHYJBQSZYWRYSZPTDKZPFPBNZTKLQYHBBZPNPPTYZZYBQNYDCPJMMCYCQMCYFZZDCMNLFPBPLNGQJTBTTNJZPZBBZNJKLJQYLNBZQHKSJZNGGQSZZKYXSHPZSNBCGZKDDZQANZHJKDRTLZLSWJLJZLYWTJNDJZJHXYAYNCBGTZCSSQMNJPJYTYSWXZFKWJQTKHTZPLBHSNJZSYZBWZZZZLSYLSBJHDWWQPSLMMFBJDWAQYZTCJTBNNWZXQXCDSLQGDSDPDZHJTQQPSWLYYJZLGYXYZLCTCBJTKTYCZJTQKBSJLGMGZDMCSGPYNJZYQYYKNXRPWSZXMTNCSZZYXYBYHYZAXYWQCJTLLCKJJTJHGDXDXYQYZZBYWDLWQCGLZGJGQRQZCZSSBCRPCSKYDZNXJSQGXSSJMYDNSTZTPBDLTKZWXQWQTZEXNQCZGWEZKSSBYBRTSSSLCCGBPSZQSZLCCGLLLZXHZQTHCZMQGYZQZNMCOCSZJMMZSQPJYGQLJYJPPLDXRGZYXCCSXHSHGTZNLZWZKJCXTCFCJXLBMQBCZZWPQDNHXLJCTHYZLGYLNLSZZPCXDSCQQHJQKSXZPBAJYEMSMJTZDXLCJYRYYNWJBNGZZTMJXLTBSLYRZPYLSSCNXPHLLHYLLQQZQLXYMRSYCXZLMMCZLTZSDWTJJLLNZGGQXPFSKYGYGHBFZPDKMWGHCXMSGDXJMCJZDYCABXJDLNBCDQYGSKYDQTXDJJYXMSZQAZDZFSLQXYJSJZYLBTXXWXQQZBJZUFBBLYLWDSLJHXJYZJWTDJCZFQZQZZDZSXZZQLZCDZFJHYSPYMPQZMLPPLFFXJJNZZYLSJEYQZFPFZKSYWJJJHRDJZZXTXXGLGHYDXCSKYSWMMZCWYBAZBJKSHFHJCXMHFQHYXXYZFTSJYZFXYXPZLCHMZMBXHZZSXYFYMNCWDABAZLXKTCSHHXKXJJZJSTHYGXSXYYHHHJWXKZXSSBZZWHHHCWTZZZPJXSNXQQJGZYZYWLLCWXZFXXYXYHXMKYYSWSQMNLNAYCYSPMJKHWCQHYLAJJMZXHMMCNZHBHXCLXTJPLTXYJHDYYLTTXFSZHYXXSJBJYAYRSMXYPLCKDUYHLXRLNLLSTYZYYQYGYHHSCCSMZCTZQXKYQFPYYRPFFLKQUNTSZLLZMWWTCQQYZWTLLMLMPWMBZSSTZRBPDDTLQJJBXZCSRZQQYGWCSXFWZLXCCRSZDZMCYGGDZQSGTJSWLJMYMMZYHFBJDGYXCCPSHXNZCSBSJYJGJMPPWAFFYFNXHYZXZYLREMZGZCYZSSZDLLJCSQFNXZKPTXZGXJJGFMYYYSNBTYLBNLHPFZDCYFBMGQRRSSSZXYSGTZRNYDZZCDGPJAFJFZKNZBLCZSZPSGCYCJSZLMLRSZBZZLDLSLLYSXSQZQLYXZLSKKBRXBRBZCYCXZZZEEYFGKLZLYYHGZSGZLFJHGTGWKRAAJYZKZQTSSHJJXDCYZUYJLZYRZDQQHGJZXSSZBYKJPBFRTJXLLFQWJHYLQTYMBLPZDXTZYGBDHZZRBGXHWNJTJXLKSCFSMWLSDQYSJTXKZSCFWJLBXFTZLLJZLLQBLSQMQQCGCZFPBPHZCZJLPYYGGDTGWDCFCZQYYYQYSSCLXZSKLZZZGFFCQNWGLHQYZJJCZLQZZYJPJZZBPDCCMHJGXDQDGDLZQMFGPSYTSDYFWWDJZJYSXYYCZCYHZWPBYKXRYLYBHKJKSFXTZJMMCKHLLTNYYMSYXYZPYJQYCSYCWMTJJKQYRHLLQXPSGTLYYCLJSCPXJYZFNMLRGJJTYZBXYZMSJYJHHFZQMSYXRSZCWTLRTQZSSTKXGQKGSPTGCZNJSJCQCXHMXGGZTQYDJKZDLBZSXJLHYQGGGTHQSZPYHJHHGYYGKGGCWJZZYLCZLXQSFTGZSLLLMLJSKCTBLLZZSZMMNYTPZSXQHJCJYQXYZXZQZCPSHKZZYSXCDFGMWQRLLQXRFZTLYSTCTMJCXJJXHJNXTNRZTZFQYHQGLLGCXSZSJDJLJCYDSJTLNYXHSZXCGJZYQPYLFHDJSBPCCZHJJJQZJQDYBSSLLCMYTTMQTBHJQNNYGKYRQYQMZGCJKPDCGMYZHQLLSLLCLMHOLZGDYYFZSLJCQZLYLZQJESHNYLLJXGJXLYSYYYXNBZLJSSZCQQCJYLLZLTJYLLZLLBNYLGQCHXYYXOXCXQKYJXXXYKLXSXXYQXCYKQXQCSGYXXYQXYGYTQOHXHXPYXXXULCYEYCHZZCBWQBBWJQZSCSZSSLZYLKDESJZWMYMCYTSDSXXSCJPQQSQYLYYZYCMDJDZYWCBTJSYDJKCYDDJLBDJJSODZYSYXQQYXDHHGQQYQHDYXWGMMMAJDYBBBPPBCMUUPLJZSMTXERXJMHQNUTPJDCBSSMSSSTKJTSSMMTRCPLZSZMLQDSDMJMQPNQDXCFYNBFSDQXYXHYAYKQYDDLQYYYSSZBYDSLNTFQTZQPZMCHDHCZCWFDXTMYQSPHQYYXSRGJCWTJTZZQMGWJJTJHTQJBBHWZPXXHYQFXXQYWYYHYSCDYDHHQMNMTMWCPBSZPPZZGLMZFOLLCFWHMMSJZTTDHZZYFFYTZZGZYSKYJXQYJZQBHMBZZLYGHGFMSHPZFZSNCLPBQSNJXZSLXXFPMTYJYGBXLLDLXPZJYZJYHHZCYWHJYLSJEXFSZZYWXKZJLUYDTMLYMQJPWXYHXSKTQJEZRPXXZHHMHWQPWQLYJJQJJZSZCPHJLCHHNXJLQWZJHBMZYXBDHHYPZLHLHLGFWLCHYYTLHJXCJMSCPXSTKPNHQXSRTYXXTESYJCTLSSLSTDLLLWWYHDHRJZSFGXTSYCZYNYHTDHWJSLHTZDQDJZXXQHGYLTZPHCSQFCLNJTCLZPFSTPDYNYLGMJLLYCQHYSSHCHYLHQYQTMZYPBYWRFQYKQSYSLZDQJMPXYYSSRHZJNYWTQDFZBWWTWWRXCWHGYHXMKMYYYQMSMZHNGCEPMLQQMTCWCTMMPXJPJJHFXYYZSXZHTYBMSTSYJTTQQQYYLHYNPYQZLCYZHZWSMYLKFJXLWGXYPJYTYSYXYMZCKTTWLKSMZSYLMPWLZWXWQZSSAQSYXYRHSSNTSRAPXCPWCMGDXHXZDZYFJHGZTTSBJHGYZSZYSMYCLLLXBTYXHBBZJKSSDMALXHYCFYGMQYPJYCQXJLLLJGSLZGQLYCJCCZOTYXMTMTTLLWTGPXYMZMKLPSZZZXHKQYSXCTYJZYHXSHYXZKXLZWPSQPYHJWPJPWXQQYLXSDHMRSLZZYZWTTCYXYSZZSHBSCCSTPLWSSCJCHNLCGCHSSPHYLHFHHXJSXYLLNYLSZDHZXYLSXLWZYKCLDYAXZCMDDYSPJTQJZLNWQPSSSWCTSTSZLBLNXSMNYYMJQBQHRZWTYYDCHQLXKPZWBGQYBKFCMZWPZLLYYLSZYDWHXPSBCMLJBSCGBHXLQHYRLJXYSWXWXZSLDFHLSLYNJLZYFLYJYCDRJLFSYZFSLLCQYQFGJYHYXZLYLMSTDJCYHBZLLNWLXXYGYYHSMGDHXXHHLZZJZXCZZZCYQZFNGWPYLCPKPYYPMCLQKDGXZGGWQBDXZZKZFBXXLZXJTPJPTTBYTSZZDWSLCHZHSLTYXHQLHYXXXYYZYSWTXZKHLXZXZPYHGCHKCFSYHUTJRLXFJXPTZTWHPLYXFCRHXSHXKYXXYHZQDXQWULHYHMJTBFLKHTXCWHJFWJCFPQRYQXCYYYQYGRPYWSGSUNGWCHKZDXYFLXXHJJBYZWTSXXNCYJJYMSWZJQRMHXZWFQSYLZJZGBHYNSLBGTTCSYBYXXWXYHXYYXNSQYXMQYWRGYQLXBBZLJSYLPSYTJZYHYZAWLRORJMKSCZJXXXYXCHDYXRYXXJDTSQFXLYLTSFFYXLMTYJMJUYYYXLTZCSXQZQHZXLYYXZHDNBRXXXJCTYHLBRLMBRLLAXKYLLLJLYXXLYCRYLCJTGJCMTLZLLCYZZPZPCYAWHJJFYBDYYZSMPCKZDQYQPBPCJPDCYZMDPBCYYDYCNNPLMTMLRMFMMGWYZBSJGYGSMZQQQZTXMKQWGXLLPJGZBQCDJJJFPKJKCXBLJMSWMDTQJXLDLPPBXCWRCQFBFQJCZAHZGMYKPHYYHZYKNDKZMBPJYXPXYHLFPNYYGXJDBKXNXHJMZJXSTRSTLDXSKZYSYBZXJLXYSLBZYSLHXJPFXPQNBYLLJQKYGZMCYZZYMCCSLCLHZFWFWYXZMWSXTYNXJHPYYMCYSPMHYSMYDYSHQYZCHMJJMZCAAGCFJBBHPLYZYLXXSDJGXDHKXXTXXNBHRMLYJSLTXMRHNLXQJXYZLLYSWQGDLBJHDCGJYQYCMHWFMJYBMBYJYJWYMDPWHXQLDYGPDFXXBCGJSPCKRSSYZJMSLBZZJFLJJJLGXZGYXYXLSZQYXBEXYXHGCXBPLDYHWETTWWCJMBTXCHXYQXLLXFLYXLLJLSSFWDPZSMYJCLMWYTCZPCHQEKCQBWLCQYDPLQPPQZQFJQDJHYMMCXTXDRMJWRHXCJZYLQXDYYNHYYHRSLSRSYWWZJYMTLTLLGTQCJZYABTCKZCJYCCQLJZQXALMZYHYWLWDXZXQDLLQSHGPJFJLJHJABCQZDJGTKHSSTCYJLPSWZLXZXRWGLDLZRLZXTGSLLLLZLYXXWGDZYGBDPHZPBRLWSXQBPFDWOFMWHLYPCBJCCLDMBZPBZZLCYQXLDOMZBLZWPDWYYGDSTTHCSQSCCRSSSYSLFYBFNTYJSZDFNDPDHDZZMBBLSLCMYFFGTJJQWFTMTPJWFNLBZCMMJTGBDZLQLPYFHYYMJYLSDCHDZJWJCCTLJCLDTLJJCPDDSQDSSZYBNDBJLGGJZXSXNLYCYBJXQYCBYLZCFZPPGKCXZDZFZTJJFJSJXZBNZYJQTTYJYHTYCZHYMDJXTTMPXSPLZCDWSLSHXYPZGTFMLCJTYCBPMGDKWYCYZCDSZZYHFLYCTYGWHKJYYLSJCXGYWJCBLLCSNDDBTZBSCLYZCZZSSQDLLMQYYHFSLQLLXFTYHABXGWNYWYYPLLSDLDLLBJCYXJZMLHLJDXYYQYTDLLLBUGBFDFBBQJZZMDPJHGCLGMJJPGAEHHBWCQXAXHHHZCHXYPHJAXHLPHJPGPZJQCQZGJJZZUZDMQYYBZZPHYHYBWHAZYJHYKFGDPFQSDLZMLJXKXGALXZDAGLMDGXMWZQYXXDXXPFDMMSSYMPFMDMMKXKSYZYSHDZKXSYSMMZZZMSYDNZZCZXFPLSTMZDNMXCKJMZTYYMZMZZMSXHHDCZJEMXXKLJSTLWLSQLYJZLLZJSSDPPMHNLZJCZYHMXXHGZCJMDHXTKGRMXFWMCGMWKDTKSXQMMMFZZYDKMSCLCMPCGMHSPXQPZDSSLCXKYXTWLWJYAHZJGZQMCSNXYYMMPMLKJXMHLMLQMXCTKZMJQYSZJSYSZHSYJZJCDAJZYBSDQJZGWZQQXFKDMSDJLFWEHKZQKJPEYPZYSZCDWYJFFMZZYLTTDZZEFMZLBNPPLPLPEPSZALLTYLKCKQZKGENQLWAGYXYDPXLHSXQQWQCQXQCLHYXXMLYCCWLYMQYSKGCHLCJNSZKPYZKCQZQLJPDMDZHLASXLBYDWQLWDNBQCRYDDZTJYBKBWSZDXDTNPJDTCTQDFXQQMGNXECLTTBKPWSLCTYQLPWYZZKLPYGZCQQPLLKCCYLPQMZCZQCLJSLQZDJXLDDHPZQDLJJXZQDXYZQKZLJCYQDYJPPYPQYKJYRMPCBYMCXKLLZLLFQPYLLLMBSGLCYSSLRSYSQTMXYXZQZFDZUYSYZTFFMZZSMZQHZSSCCMLYXWTPZGXZJGZGSJSGKDDHTQGGZLLBJDZLCBCHYXYZHZFYWXYZYMSDBZZYJGTSMTFXQYXQSTDGSLNXDLRYZZLRYYLXQHTXSRTZNGZXBNQQZFMYKMZJBZYMKBPNLYZPBLMCNQYZZZSJZHJCTZKHYZZJRDYZHNPXGLFZTLKGJTCTSSYLLGZRZBBQZZKLPKLCZYSSUYXBJFPNJZZXCDWXZYJXZZDJJKGGRSRJKMSMZJLSJYWQSKYHQJSXPJZZZLSNSHRNYPZTWCHKLPSRZLZXYJQXQKYSJYCZTLQZYBBYBWZPQDWWYZCYTJCJXCKCWDKKZXSGKDZXWWYYJQYYTCYTDLLXWKCZKKLCCLZCQQDZLQLCSFQCHQHSFSMQZZLNBJJZBSJHTSZDYSJQJPDLZCDCWJKJZZLPYCGMZWDJJBSJQZSYZYHHXJPBJYDSSXDZNCGLQMBTSFSBPDZDLZNFGFJGFSMPXJQLMBLGQCYYXBQKDJJQYRFKZTJDHCZKLBSDZCFJTPLLJGXHYXZCSSZZXSTJYGKGCKGYOQXJPLZPBPGTGYJZGHZQZZLBJLSQFZGKQQJZGYCZBZQTLDXRJXBSXXPZXHYZYCLWDXJJHXMFDZPFZHQHQMQGKSLYHTYCGFRZGNQXCLPDLBZCSCZQLLJBLHBZCYPZZPPDYMZZSGYHCKCPZJGSLJLNSCDSLDLXBMSTLDDFJMKDJDHZLZXLSZQPQPGJLLYBDSZGQLBZLSLKYYHZTTNTJYQTZZPSZQZTLLJTYYLLQLLQYZQLBDZLSLYYZYMDFSZSNHLXZNCZQZPBWSKRFBSYZMTHBLGJPMCZZLSTLXSHTCSYZLZBLFEQHLXFLCJLYLJQCBZLZJHHSSTBRMHXZHJZCLXFNBGXGTQJCZTMSFZKJMSSNXLJKBHSJXNTNLZDNTLMSJXGZJYJCZXYJYJWRWWQNZTNFJSZPZSHZJFYRDJSFSZJZBJFZQZZHZLXFYSBZQLZSGYFTZDCSZXZJBQMSZKJRHYJZCKMJKHCHGTXKXQGLXPXFXTRTYLXJXHDTSJXHJZJXZWZLCQSBTXWXGXTXXHXFTSDKFJHZYJFJXRZSDLLLTQSQQZQWZXSYQTWGWBZCGZLLYZBCLMQQTZHZXZXLJFRMYZFLXYSQXXJKXRMQDZDMMYYBSQBHGZMWFWXGMXLZPYYTGZYCCDXYZXYWGSYJYZNBHPZJSQSYXSXRTFYZGRHZTXSZZTHCBFCLSYXZLZQMZLMPLMXZJXSFLBYZMYQHXJSXRXSQZZZSSLYFRCZJRCRXHHZXQYDYHXSJJHZCXZBTYNSYSXJBQLPXZQPYMLXZKYXLXCJLCYSXXZZLXDLLLJJYHZXGYJWKJRWYHCPSGNRZLFZWFZZNSXGXFLZSXZZZBFCSYJDBRJKRDHHGXJLJJTGXJXXSTJTJXLYXQFCSGSWMSBCTLQZZWLZZKXJMLTMJYHSDDBXGZHDLBMYJFRZFSGCLYJBPMLYSMSXLSZJQQHJZFXGFQFQBPXZGYYQXGZTCQWYLTLGWSGWHRLFSFGZJMGMGBGTJFSYZZGZYZAFLSSPMLPFLCWBJZCLJJMZLPJJLYMQDMYYYFBGYGYZMLYZDXQYXRQQQHSYYYQXYLJTYXFSFSLLGNQCYHYCWFHCCCFXPYLYPLLZYXXXXXKQHHXSHJZCFZSCZJXCPZWHHHHHAPYLQALPQAFYHXDYLUKMZQGGGDDESRNNZLTZGCHYPPYSQJJHCLLJTOLNJPZLJLHYMHEYDYDSQYCDDHGZUNDZCLZYZLLZNTNYZGSLHSLPJJBDGWXPCDUTJCKLKCLWKLLCASSTKZZDNQNTTLYYZSSYSSZZRYLJQKCQDHHCRXRZYDGRGCWCGZQFFFPPJFZYNAKRGYWYQPQXXFKJTSZZXSWZDDFBBXTBGTZKZNPZZPZXZPJSZBMQHKCYXYLDKLJNYPKYGHGDZJXXEAHPNZKZTZCMXCXMMJXNKSZQNMNLWBWWXJKYHCPSTMCSQTZJYXTPCTPDTNNPGLLLZSJLSPBLPLQHDTNJNLYYRSZFFJFQWDPHZDWMRZCCLODAXNSSNYZRESTYJWJYJDBCFXNMWTTBYLWSTSZGYBLJPXGLBOCLHPCBJLTMXZLJYLZXCLTPNCLCKXTPZJSWCYXSFYSZDKNTLBYJCYJLLSTGQCBXRYZXBXKLYLHZLQZLNZCXWJZLJZJNCJHXMNZZGJZZXTZJXYCYYCXXJYYXJJXSSSJSTSSTTPPGQTCSXWZDCSYFPTFBFHFBBLZJCLZZDBXGCXLQPXKFZFLSYLTUWBMQJHSZBMDDBCYSCCLDXYCDDQLYJJWMQLLCSGLJJSYFPYYCCYLTJANTJJPWYCMMGQYYSXDXQMZHSZXPFTWWZQSWQRFKJLZJQQYFBRXJHHFWJJZYQAZMYFRHCYYBYQWLPEXCCZSTYRLTTDMQLYKMBBGMYYJPRKZNPBSXYXBHYZDJDNGHPMFSGMWFZMFQMMBCMZZCJJLCNUXYQLMLRYGQZCYXZLWJGCJCGGMCJNFYZZJHYCPRRCMTZQZXHFQGTJXCCJEAQCRJYHPLQLSZDJRBCQHQDYRHYLYXJSYMHZYDWLDFRYHBPYDTSSCNWBXGLPZMLZZTQSSCPJMXXYCSJYTYCGHYCJWYRXXLFEMWJNMKLLSWTXHYYYNCMMCWJDQDJZGLLJWJRKHPZGGFLCCSCZMCBLTBHBQJXQDSPDJZZGKGLFQYWBZYZJLTSTDHQHCTCBCHFLQMPWDSHYYTQWCNZZJTLBYMBPDYYYXSQKXWYYFLXXNCWCXYPMAELYKKJMZZZBRXYYQJFLJPFHHHYTZZXSGQQMHSPGDZQWBWPJHZJDYSCQWZKTXXSQLZYYMYSDZGRXCKKUJLWPYSYSCSYZLRMLQSYLJXBCXTLWDQZPCYCYKPPPNSXFYZJJRCEMHSZMSXLXGLRWGCSTLRSXBZGBZGZTCPLUJLSLYLYMTXMTZPALZXPXJTJWTCYYZLBLXBZLQMYLXPGHDSLSSDMXMBDZZSXWHAMLCZCPJMCNHJYSNSYGCHSKQMZZQDLLKABLWJXSFMOCDXJRRLYQZKJMYBYQLYHETFJZFRFKSRYXFJTWDSXXSYSQJYSLYXWJHSNLXYYXHBHAWHHJZXWMYLJCSSLKYDZTXBZSYFDXGXZJKHSXXYBSSXDPYNZWRPTQZCZENYGCXQFJYKJBZMLJCMQQXUOXSLYXXLYLLJDZBTYMHPFSTTQQWLHOKYBLZZALZXQLHZWRRQHLSTMYPYXJJXMQSJFNBXYXYJXXYQYLTHYLQYFMLKLJTMLLHSZWKZHLJMLHLJKLJSTLQXYLMBHHLNLZXQJHXCFXXLHYHJJGBYZZKBXSCQDJQDSUJZYYHZHHMGSXCSYMXFEBCQWWRBPYYJQTYZCYQYQQZYHMWFFHGZFRJFCDPXNTQYZPDYKHJLFRZXPPXZDBBGZQSTLGDGYLCQMLCHHMFYWLZYXKJLYPQHSYWMQQGQZMLZJNSQXJQSYJYCBEHSXFSZPXZWFLLBCYYJDYTDTHWZSFJMQQYJLMQXXLLDTTKHHYBFPWTYYSQQWNQWLGWDEBZWCMYGCULKJXTMXMYJSXHYBRWFYMWFRXYQMXYSZTZZTFYKMLDHQDXWYYNLCRYJBLPSXCXYWLSPRRJWXHQYPHTYDNXHHMMYWYTZCSQMTSSCCDALWZTCPQPYJLLQZYJSWXMZZMMYLMXCLMXCZMXMZSQTZPPQQBLPGXQZHFLJJHYTJSRXWZXSCCDLXTYJDCQJXSLQYCLZXLZZXMXQRJMHRHZJBHMFLJLMLCLQNLDXZLLLPYPSYJYSXCQQDCMQJZZXHNPNXZMEKMXHYKYQLXSXTXJYYHWDCWDZHQYYBGYBCYSCFGPSJNZDYZZJZXRZRQJJYMCANYRJTLDPPYZBSTJKXXZYPFDWFGZZRPYMTNGXZQBYXNBUFNQKRJQZMJEGRZGYCLKXZDSKKNSXKCLJSPJYYZLQQJYBZSSQLLLKJXTBKTYLCCDDBLSPPFYLGYDTZJYQGGKQTTFZXBDKTYYHYBBFYTYYBCLPDYTGDHRYRNJSPTCSNYJQHKLLLZSLYDXXWBCJQSPXBPJZJCJDZFFXXBRMLAZHCSNDLBJDSZBLPRZTSWSBXBCLLXXLZDJZSJPYLYXXYFTFFFBHJJXGBYXJPMMMPSSJZJMTLYZJXSWXTYLEDQPJMYGQZJGDJLQJWJQLLSJGJGYGMSCLJJXDTYGJQJQJCJZCJGDZZSXQGSJGGCXHQXSNQLZZBXHSGZXCXYLJXYXYYDFQQJHJFXDHCTXJYRXYSQTJXYEFYYSSYYJXNCYZXFXMSYSZXYYSCHSHXZZZGZZZGFJDLTYLNPZGYJYZYYQZPBXQBDZTZCZYXXYHHSQXSHDHGQHJHGYWSZTMZMLHYXGEBTYLZKQWYTJZRCLEKYSTDBCYKQQSAYXCJXWWGSBHJYZYDHCSJKQCXSWXFLTYNYZPZCCZJQTZWJQDZZZQZLJJXLSBHPYXXPSXSHHEZTXFPTLQYZZXHYTXNCFZYYHXGNXMYWXTZSJPTHHGYMXMXQZXTSBCZYJYXXTYYZYPCQLMMSZMJZZLLZXGXZAAJZYXJMZXWDXZSXZDZXLEYJJZQBHZWZZZQTZPSXZTDSXJJJZNYAZPHXYYSRNQDTHZHYYKYJHDZXZLSWCLYBZYECWCYCRYLCXNHZYDZYDYJDFRJJHTRSQTXYXJRJHOJYNXELXSFSFJZGHPZSXZSZDZCQZBYYKLSGSJHCZSHDGQGXYZGXCHXZJWYQWGYHKSSEQZZNDZFKWYSSTCLZSTSYMCDHJXXYWEYXCZAYDMPXMDSXYBSQMJMZJMTZQLPJYQZCGQHXJHHLXXHLHDLDJQCLDWBSXFZZYYSCHTYTYYBHECXHYKGJPXHHYZJFXHWHBDZFYZBCAPNPGNYDMSXHMMMMAMYNBYJTMPXYYMCTHJBZYFCGTYHWPHFTWZZEZSBZEGPFMTSKFTYCMHFLLHGPZJXZJGZJYXZSBBQSCZZLZCCSTPGXMJSFTCCZJZDJXCYBZLFCJSYZFGSZLYBCWZZBYZDZYPSWYJZXZBDSYUXLZZBZFYGCZXBZHZFTPBGZGEJBSTGKDMFHYZZJHZLLZZGJQZLSFDJSSCBZGPDLFZFZSZYZYZSYGCXSNXXCHCZXTZZLJFZGQSQYXZJQDCCZTQCDXZJYQJQCHXZTDLGSCXZSYQJQTZWLQDQZTQCHQQJZYEZZZPBWKDJFCJPZTYPQYQTTYNLMBDKTJZPQZQZZFPZSBNJLGYJDXJDZZKZGQKXDLPZJTCJDQBXDJQJSTCKNXBXZMSLYJCQMTJQWWCJQNJNLLLHJCWQTBZQYDZCZPZZDZYDDCYZZZCCJTTJFZDPRRTZTJDCQTQZDTJNPLZBCLLCTZSXKJZQZPZLBZRBTJDCXFCZDBCCJJLTQQPLDCGZDBBZJCQDCJWYNLLZYZCCDWLLXWZLXRXNTQQCZXKQLSGDFQTDDGLRLAJJTKUYMKQLLTZYTDYYCZGJWYXDXFRSKSTQTENQMRKQZHHQKDLDAZFKYPBGGPZREBZZYKZZSPEGJXGYKQZZZSLYSYYYZWFQZYLZZLZHWCHKYPQGNPGBLPLRRJYXCCSYYHSFZFYBZYYTGZXYLXCZWXXZJZBLFFLGSKHYJZEYJHLPLLLLCZGXDRZELRHGKLZZYHZLYQSZZJZQLJZFLNBHGWLCZCFJYSPYXZLZLXGCCPZBLLCYBBBBUBBCBPCRNNZCZYRBFSRLDCGQYYQXYGMQZWTZYTYJXYFWTEHZZJYWLCCNTZYJJZDEDPZDZTSYQJHDYMBJNYJZLXTSSTPHNDJXXBYXQTZQDDTJTDYYTGWSCSZQFLSHLGLBCZPHDLYZJYCKWTYTYLBNYTSDSYCCTYSZYYEBHEXHQDTWNYGYCLXTSZYSTQMYGZAZCCSZZDSLZCLZRQXYYELJSBYMXSXZTEMBBLLYYLLYTDQYSHYMRQWKFKBFXNXSBYCHXBWJYHTQBPBSBWDZYLKGZSKYHXQZJXHXJXGNLJKZLYYCDXLFYFGHLJGJYBXQLYBXQPQGZTZPLNCYPXDJYQYDYMRBESJYYHKXXSTMXRCZZYWXYQYBMCLLYZHQYZWQXDBXBZWZMSLPDMYSKFMZKLZCYQYCZLQXFZZYDQZPZYGYJYZMZXDZFYFYTTQTZHGSPCZMLCCYTZXJCYTJMKSLPZHYSNZLLYTPZCTZZCKTXDHXXTQCYFKSMQCCYYAZHTJPCYLZLYJBJXTPNYLJYYNRXSYLMMNXJSMYBCSYSYLZYLXJJQYLDZLPQBFZZBLFNDXQKCZFYWHGQMRDSXYCYTXNQQJZYYPFZXDYZFPRXEJDGYQBXRCNFYYQPGHYJDYZXGRHTKYLNWDZNTSMPKLBTHBPYSZBZTJZSZZJTYYXZPHSSZZBZCZPTQFZMYFLYPYBBJQXZMXXDJMTSYSKKBJZXHJCKLPSMKYJZCXTMLJYXRZZQSLXXQPYZXMKYXXXJCLJPRMYYGADYSKQLSNDHYZKQXZYZTCGHZTLMLWZYBWSYCTBHJHJFCWZTXWYTKZLXQSHLYJZJXTMPLPYCGLTBZZTLZJCYJGDTCLKLPLLQPJMZPAPXYZLKKTKDZCZZBNZDYDYQZJYJGMCTXLTGXSZLMLHBGLKFWNWZHDXUHLFMKYSLGXDTWWFRJEJZTZHYDXYKSHWFZCQSHKTMQQHTZHYMJDJSKHXZJZBZZXYMPAGQMSTPXLSKLZYNWRTSQLSZBPSPSGZWYHTLKSSSWHZZLYYTNXJGMJSZSUFWNLSOZTXGXLSAMMLBWLDSZYLAKQCQCTMYCFJBSLXCLZZCLXXKSBZQCLHJPSQPLSXXCKSLNHPSFQQYTXYJZLQLDXZQJZDYYDJNZPTUZDSKJFSLJHYLZSQZLBTXYDGTQFDBYAZXDZHZJNHHQBYKNXJJQCZMLLJZKSPLDYCLBBLXKLELXJLBQYCXJXGCNLCQPLZLZYJTZLJGYZDZPLTQCSXFDMNYCXGBTJDCZNBGBQYQJWGKFHTNPYQZQGBKPBBYZMTJDYTBLSQMPSXTBNPDXKLEMYYCJYNZCTLDYKZZXDDXHQSHDGMZSJYCCTAYRZLPYLTLKXSLZCGGEXCLFXLKJRTLQJAQZNCMBYDKKCXGLCZJZXJHPTDJJMZQYKQSECQZDSHHADMLZFMMZBGNTJNNLGBYJBRBTMLBYJDZXLCJLPLDLPCQDHLXZLYCBLCXZZJADJLNZMMSSSMYBHBSQKBHRSXXJMXSDZNZPXLGBRHWGGFCXGMSKLLTSJYYCQLTSKYWYYHYWXBXQYWPYWYKQLSQPTNTKHQCWDQKTWPXXHCPTHTWUMSSYHBWCRWXHJMKMZNGWTMLKFGHKJYLSYYCXWHYECLQHKQHTTQKHFZLDXQWYZYYDESBPKYRZPJFYYZJCEQDZZDLATZBBFJLLCXDLMJSSXEGYGSJQXCWBXSSZPDYZCXDNYXPPZYDLYJCZPLTXLSXYZYRXCYYYDYLWWNZSAHJSYQYHGYWWAXTJZDAXYSRLTDPSSYYFNEJDXYZHLXLLLZQZSJNYQYQQXYJGHZGZCYJCHZLYCDSHWSHJZYJXCLLNXZJJYYXNFXMWFPYLCYLLABWDDHWDXJMCXZTZPMLQZHSFHZYNZTLLDYWLSLXHYMMYLMBWWKYXYADTXYLLDJPYBPWUXJMWMLLSAFDLLYFLBHHHBQQLTZJCQJLDJTFFKMMMBYTHYGDCQRDDWRQJXNBYSNWZDBYYTBJHPYBYTTJXAAHGQDQTMYSTQXKBTZPKJLZRBEQQSSMJJBDJOTGTBXPGBKTLHQXJJJCTHXQDWJLWRFWQGWSHCKRYSWGFTGYGBXSDWDWRFHWYTJJXXXJYZYSLPYYYPAYXHYDQKXSHXYXGSKQHYWFDDDPPLCJLQQEEWXKSYYKDYPLTJTHKJLTCYYHHJTTPLTZZCDLTHQKZXQYSTEEYWYYZYXXYYSTTJKLLPZMCYHQGXYHSRMBXPLLNQYDQHXSXXWGDQBSHYLLPJJJTHYJKYPPTHYYKTYEZYENMDSHLCRPQFDGFXZPSFTLJXXJBSWYYSKSFLXLPPLBBBLBSFXFYZBSJSSYLPBBFFFFSSCJDSTZSXZRYYSYFFSYZYZBJTBCTSBSDHRTJJBYTCXYJEYLXCBNEBJDSYXYKGSJZBXBYTFZWGENYHHTHZHHXFWGCSTBGXKLSXYWMTMBYXJSTZSCDYQRCYTWXZFHMYMCXLZNSDJTTTXRYCFYJSBSDYERXJLJXBBDEYNJGHXGCKGSCYMBLXJMSZNSKGXFBNBPTHFJAAFXYXFPXMYPQDTZCXZZPXRSYWZDLYBBKTYQPQJPZYPZJZNJPZJLZZFYSBTTSLMPTZRTDXQSJEHBZYLZDHLJSQMLHTXTJECXSLZZSPKTLZKQQYFSYGYWPCPQFHQHYTQXZKRSGTTSQCZLPTXCDYYZXSQZSLXLZMYCPCQBZYXHBSXLZDLTCDXTYLZJYYZPZYZLTXJSJXHLPMYTXCQRBLZSSFJZZTNJYTXMYJHLHPPLCYXQJQQKZZSCPZKSWALQSBLCCZJSXGWWWYGYKTJBBZTDKHXHKGTGPBKQYSLPXPJCKBMLLXDZSTBKLGGQKQLSBKKTFXRMDKBFTPZFRTBBRFERQGXYJPZSSTLBZTPSZQZSJDHLJQLZBPMSMMSXLQQNHKNBLRDDNXXDHDDJCYYGYLXGZLXSYGMQQGKHBPMXYXLYTQWLWGCPBMQXCYZYDRJBHTDJYHQSHTMJSBYPLWHLZFFNYPMHXXHPLTBQPFBJWQDBYGPNZTPFZJGSDDTQSHZEAWZZYLLTYYBWJKXXGHLFKXDJTMSZSQYNZGGSWQSPHTLSSKMCLZXYSZQZXNCJDQGZDLFNYKLJCJLLZLMZZNHYDSSHTHZZLZZBBHQZWWYCRZHLYQQJBEYFXXXWHSRXWQHWPSLMSSKZTTYGYQQWRSLALHMJTQJSMXQBJJZJXZYZKXBYQXBJXSHZTSFJLXMXZXFGHKZSZGGYLCLSARJYHSLLLMZXELGLXYDJYTLFBHBPNLYZFBBHPTGJKWETZHKJJXZXXGLLJLSTGSHJJYQLQZFKCGNNDJSSZFDBCTWWSEQFHQJBSAQTGYPQLBXBMMYWXGSLZHGLZGQYFLZBYFZJFRYSFMBYZHQGFWZSYFYJJPHZBYYZFFWODGRLMFTWLBZGYCQXCDJYGZYYYYTYTYDWEGAZYHXJLZYYHLRMGRXXZCLHNELJJTJTPWJYBJJBXJJTJTEEKHWSLJPLPSFYZPQQBDLQJJTYYQLYZKDKSQJYYQZLDQTGJQYZJSUCMRYQTHTEJMFCTYHYPKMHYZWJDQFHYYXWSHCTXRLJHQXHCCYYYJLTKTTYTMXGTCJTZAYYOCZLYLBSZYWJYTSJYHBYSHFJLYGJXXTMZYYLTXXYPZLXYJZYZYYPNHMYMDYYLBLHLSYYQQLLNJJYMSOYQBZGDLYXYLCQYXTSZEGXHZGLHWBLJHEYXTWQMAKBPQCGYSHHEGQCMWYYWLJYJHYYZLLJJYLHZYHMGSLJLJXCJJYCLYCJPCPZJZJMMYLCQLNQLJQJSXYJMLSZLJQLYCMMHCFMMFPQQMFYLQMCFFQMMMMHMZNFHHJGTTHHKHSLNCHHYQDXTMMQDCYZYXYQMYQYLTDCYYYZAZZCYMZYDLZFFFMMYCQZWZZMABTBYZTDMNZZGGDFTYPCGQYTTSSFFWFDTZQSSYSTWXJHXYTSXXYLBYQHWWKXHZXWZNNZZJZJJQJCCCHYYXBZXZCYZTLLCQXYNJYCYYCYNZZQYYYEWYCZDCJYCCHYJLBTZYYCQWMPWPYMLGKDLDLGKQQBGYCHJXY";
+    }
+    //此处收录了375个多音字,数据来自于http://www.51window.net/page/pinyin
+    var oMultiDiff = {
+        "19969": "DZ",
+        "19975": "WM",
+        "19988": "QJ",
+        "20048": "YL",
+        "20056": "SC",
+        "20060": "NM",
+        "20094": "QG",
+        "20127": "QJ",
+        "20167": "QC",
+        "20193": "YG",
+        "20250": "KH",
+        "20256": "ZC",
+        "20282": "SC",
+        "20285": "QJG",
+        "20291": "TD",
+        "20314": "YD",
+        "20340": "NE",
+        "20375": "TD",
+        "20389": "YJ",
+        "20391": "CZ",
+        "20415": "PB",
+        "20446": "YS",
+        "20447": "SQ",
+        "20504": "TC",
+        "20608": "KG",
+        "20854": "QJ",
+        "20857": "ZC",
+        "20911": "PF",
+        "20504": "TC",
+        "20608": "KG",
+        "20854": "QJ",
+        "20857": "ZC",
+        "20911": "PF",
+        "20985": "AW",
+        "21032": "PB",
+        "21048": "XQ",
+        "21049": "SC",
+        "21089": "YS",
+        "21119": "JC",
+        "21242": "SB",
+        "21273": "SC",
+        "21305": "YP",
+        "21306": "QO",
+        "21330": "ZC",
+        "21333": "SDC",
+        "21345": "QK",
+        "21378": "CA",
+        "21397": "SC",
+        "21414": "XS",
+        "21442": "SC",
+        "21477": "JG",
+        "21480": "TD",
+        "21484": "ZS",
+        "21494": "YX",
+        "21505": "YX",
+        "21512": "HG",
+        "21523": "XH",
+        "21537": "PB",
+        "21542": "PF",
+        "21549": "KH",
+        "21571": "E",
+        "21574": "DA",
+        "21588": "TD",
+        "21589": "O",
+        "21618": "ZC",
+        "21621": "KHA",
+        "21632": "ZJ",
+        "21654": "KG",
+        "21679": "LKG",
+        "21683": "KH",
+        "21710": "A",
+        "21719": "YH",
+        "21734": "WOE",
+        "21769": "A",
+        "21780": "WN",
+        "21804": "XH",
+        "21834": "A",
+        "21899": "ZD",
+        "21903": "RN",
+        "21908": "WO",
+        "21939": "ZC",
+        "21956": "SA",
+        "21964": "YA",
+        "21970": "TD",
+        "22003": "A",
+        "22031": "JG",
+        "22040": "XS",
+        "22060": "ZC",
+        "22066": "ZC",
+        "22079": "MH",
+        "22129": "XJ",
+        "22179": "XA",
+        "22237": "NJ",
+        "22244": "TD",
+        "22280": "JQ",
+        "22300": "YH",
+        "22313": "XW",
+        "22331": "YQ",
+        "22343": "YJ",
+        "22351": "PH",
+        "22395": "DC",
+        "22412": "TD",
+        "22484": "PB",
+        "22500": "PB",
+        "22534": "ZD",
+        "22549": "DH",
+        "22561": "PB",
+        "22612": "TD",
+        "22771": "KQ",
+        "22831": "HB",
+        "22841": "JG",
+        "22855": "QJ",
+        "22865": "XQ",
+        "23013": "ML",
+        "23081": "WM",
+        "23487": "SX",
+        "23558": "QJ",
+        "23561": "YW",
+        "23586": "YW",
+        "23614": "YW",
+        "23615": "SN",
+        "23631": "PB",
+        "23646": "ZS",
+        "23663": "ZT",
+        "23673": "YG",
+        "23762": "TD",
+        "23769": "ZS",
+        "23780": "QJ",
+        "23884": "QK",
+        "24055": "XH",
+        "24113": "DC",
+        "24162": "ZC",
+        "24191": "GA",
+        "24273": "QJ",
+        "24324": "NL",
+        "24377": "TD",
+        "24378": "QJ",
+        "24439": "PF",
+        "24554": "ZS",
+        "24683": "TD",
+        "24694": "WE",
+        "24733": "LK",
+        "24925": "TN",
+        "25094": "ZG",
+        "25100": "XQ",
+        "25103": "XH",
+        "25153": "PB",
+        "25170": "PB",
+        "25179": "KG",
+        "25203": "PB",
+        "25240": "ZS",
+        "25282": "FB",
+        "25303": "NA",
+        "25324": "KG",
+        "25341": "ZY",
+        "25373": "WZ",
+        "25375": "XJ",
+        "25384": "A",
+        "25457": "A",
+        "25528": "SD",
+        "25530": "SC",
+        "25552": "TD",
+        "25774": "ZC",
+        "25874": "ZC",
+        "26044": "YW",
+        "26080": "WM",
+        "26292": "PB",
+        "26333": "PB",
+        "26355": "ZY",
+        "26366": "CZ",
+        "26397": "ZC",
+        "26399": "QJ",
+        "26415": "ZS",
+        "26451": "SB",
+        "26526": "ZC",
+        "26552": "JG",
+        "26561": "TD",
+        "26588": "JG",
+        "26597": "CZ",
+        "26629": "ZS",
+        "26638": "YL",
+        "26646": "XQ",
+        "26653": "KG",
+        "26657": "XJ",
+        "26727": "HG",
+        "26894": "ZC",
+        "26937": "ZS",
+        "26946": "ZC",
+        "26999": "KJ",
+        "27099": "KJ",
+        "27449": "YQ",
+        "27481": "XS",
+        "27542": "ZS",
+        "27663": "ZS",
+        "27748": "TS",
+        "27784": "SC",
+        "27788": "ZD",
+        "27795": "TD",
+        "27812": "O",
+        "27850": "PB",
+        "27852": "MB",
+        "27895": "SL",
+        "27898": "PL",
+        "27973": "QJ",
+        "27981": "KH",
+        "27986": "HX",
+        "27994": "XJ",
+        "28044": "YC",
+        "28065": "WG",
+        "28177": "SM",
+        "28267": "QJ",
+        "28291": "KH",
+        "28337": "ZQ",
+        "28463": "TL",
+        "28548": "DC",
+        "28601": "TD",
+        "28689": "PB",
+        "28805": "JG",
+        "28820": "QG",
+        "28846": "PB",
+        "28952": "TD",
+        "28975": "ZC",
+        "29100": "A",
+        "29325": "QJ",
+        "29575": "SL",
+        "29602": "FB",
+        "30010": "TD",
+        "30044": "CX",
+        "30058": "PF",
+        "30091": "YSP",
+        "30111": "YN",
+        "30229": "XJ",
+        "30427": "SC",
+        "30465": "SX",
+        "30631": "YQ",
+        "30655": "QJ",
+        "30684": "QJG",
+        "30707": "SD",
+        "30729": "XH",
+        "30796": "LG",
+        "30917": "PB",
+        "31074": "NM",
+        "31085": "JZ",
+        "31109": "SC",
+        "31181": "ZC",
+        "31192": "MLB",
+        "31293": "JQ",
+        "31400": "YX",
+        "31584": "YJ",
+        "31896": "ZN",
+        "31909": "ZY",
+        "31995": "XJ",
+        "32321": "PF",
+        "32327": "ZY",
+        "32418": "HG",
+        "32420": "XQ",
+        "32421": "HG",
+        "32438": "LG",
+        "32473": "GJ",
+        "32488": "TD",
+        "32521": "QJ",
+        "32527": "PB",
+        "32562": "ZSQ",
+        "32564": "JZ",
+        "32735": "ZD",
+        "32793": "PB",
+        "33071": "PF",
+        "33098": "XL",
+        "33100": "YA",
+        "33152": "PB",
+        "33261": "CX",
+        "33324": "BP",
+        "33333": "TD",
+        "33406": "YA",
+        "33426": "WM",
+        "33432": "PB",
+        "33445": "JG",
+        "33486": "ZN",
+        "33493": "TS",
+        "33507": "QJ",
+        "33540": "QJ",
+        "33544": "ZC",
+        "33564": "XQ",
+        "33617": "YT",
+        "33632": "QJ",
+        "33636": "XH",
+        "33637": "YX",
+        "33694": "WG",
+        "33705": "PF",
+        "33728": "YW",
+        "33882": "SR",
+        "34067": "WM",
+        "34074": "YW",
+        "34121": "QJ",
+        "34255": "ZC",
+        "34259": "XL",
+        "34425": "JH",
+        "34430": "XH",
+        "34485": "KH",
+        "34503": "YS",
+        "34532": "HG",
+        "34552": "XS",
+        "34558": "YE",
+        "34593": "ZL",
+        "34660": "YQ",
+        "34892": "XH",
+        "34928": "SC",
+        "34999": "QJ",
+        "35048": "PB",
+        "35059": "SC",
+        "35098": "ZC",
+        "35203": "TQ",
+        "35265": "JX",
+        "35299": "JX",
+        "35782": "SZ",
+        "35828": "YS",
+        "35830": "E",
+        "35843": "TD",
+        "35895": "YG",
+        "35977": "MH",
+        "36158": "JG",
+        "36228": "QJ",
+        "36426": "XQ",
+        "36466": "DC",
+        "36710": "JC",
+        "36711": "ZYG",
+        "36767": "PB",
+        "36866": "SK",
+        "36951": "YW",
+        "37034": "YX",
+        "37063": "XH",
+        "37218": "ZC",
+        "37325": "ZC",
+        "38063": "PB",
+        "38079": "TD",
+        "38085": "QY",
+        "38107": "DC",
+        "38116": "TD",
+        "38123": "YD",
+        "38224": "HG",
+        "38241": "XTC",
+        "38271": "ZC",
+        "38415": "YE",
+        "38426": "KH",
+        "38461": "YD",
+        "38463": "AE",
+        "38466": "PB",
+        "38477": "XJ",
+        "38518": "YT",
+        "38551": "WK",
+        "38585": "ZC",
+        "38704": "XS",
+        "38739": "LJ",
+        "38761": "GJ",
+        "38808": "SQ",
+        "39048": "JG",
+        "39049": "XJ",
+        "39052": "HG",
+        "39076": "CZ",
+        "39271": "XT",
+        "39534": "TD",
+        "39552": "TD",
+        "39584": "PB",
+        "39647": "SB",
+        "39730": "LG",
+        "39748": "TPB",
+        "40109": "ZQ",
+        "40479": "ND",
+        "40516": "HG",
+        "40536": "HG",
+        "40583": "QJ",
+        "40765": "YQ",
+        "40784": "QJ",
+        "40840": "YK",
+        "40863": "QJG"
+    };
+    var uni = ch.charCodeAt(0);
+    //如果不在汉字处理范围之内,返回原字符,也可以调用自己的处理函数
+    if (uni > 40869 || uni < 19968)
+    {
+        return ch;
+    } //dealWithOthers(ch);
+    //检查是否是多音字,是按多音字处理,不是就直接在strChineseFirstPY字符串中找对应的首字母
+    return (oMultiDiff[uni] ? oMultiDiff[uni] : (strChineseFirstPY.charAt(uni - 19968)));
+}
+
+function mkRslt(arr)
+{
+    var arrRslt = [""];
+    for (var i = 0, len = arr.length; i < len; i++)
+    {
+        var str = arr[i];
+        var strlen = str.length;
+        if (strlen == 1)
+        {
+            for (var k = 0; k < arrRslt.length; k++)
+            {
+                arrRslt[k] += str;
+                //console.log(str)
+            }
+        }
+        else
+        {
+            var tmpArr = arrRslt.slice(0);
+            arrRslt = [];
+            for (k = 0; k < strlen; k++)
+            {
+                //复制一个相同的arrRslt
+                var tmp = tmpArr.slice(0);
+                //把当前字符str[k]添加到每个元素末尾
+                for (var j = 0; j < tmp.length; j++)
+                {
+                    tmp[j] += str.charAt(k);
+                }
+                //把复制并修改后的数组连接到arrRslt上
+                arrRslt = arrRslt.concat(tmp);
+            }
+        }
+    }
+    return arrRslt;
 }

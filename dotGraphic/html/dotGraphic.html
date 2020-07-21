@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="renderer" content="webkit">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>威科夫点数图</title>
+    <title>威科夫操盘工具</title>
     <link rel="" href="">
     <script type="text/javascript" src="jquery-1.8.3.js"></script>
     <script type="text/javascript" src="dotGraphic.js"></script>
@@ -79,6 +79,7 @@
         <a>股票：</a>
         <input id="search-input" type="text" list="stock_list" onchange="
         document.getElementById('latticeValue').value=0;
+        scale=1;
         generate();
         " name="ss" id="stocklist" value="000001" onFocus="if (value !=''){value =''}" onBlur="if (value ==''){value='请输入股票代码'}" autocomplete="off" />
         <datalist id="stock_list">
@@ -99,33 +100,37 @@
         <!--form action="" method="get"><br /--><br />
         <label><input id="kline_g" name="lineType" type="radio" checked="checked" value="1" />K线图</label>
         <label><input id="bamboo_g" name="lineType" type="radio" value="0" />竹线图</label> <br />
-        <button type="button" id="btGenerate" onclick="generate()">生成点数图</button><br />
+        <button type="button" id="btGenerate" onclick="
+        scale=1;
+        generate();
+        ">生成图形</button><br />
         <input name='percentLatticeCheck' type="checkbox" id="percentLatticeCheck" value="0" onchange="
             var check = document.getElementById('percentLatticeCheck');
             var input = document.getElementById('percentlatticeInput');
 
             if(check.checked)
             {
-                input.style.display='inline'
+                input.style.display='inline';
+                document.getElementById('latticeValue').value=0;
             }
             else
             {
                 input.style.display='none'
             }
-        " /><label title="格值可以按照当前价格的比例计算,比例默认3%,可输入">格值比例<input type="number" id="percentlatticeInput" min="1" max="100" step="1" value="3" style="display:none" />%</label><br />
+        " /><label title="格值可以按照当前价格的比例计算,比例默认2%,可输入">格值比例<input type="number" id="percentlatticeInput" min="0.1" max="100" step="0.1" value="2" style="display:none" />%</label><br />
         <input name='waveConect' type="checkbox" id="waveConect" value="1" onchange="
             var check = document.getElementById('waveConect');
             var input = document.getElementById('waveConectInput');
 
             if(check.checked)
             {
-                input.style.display='inline'
+                input.style.display='inline';
             }
             else
             {
                 input.style.display='none'
             }
-        " /><label title="维斯波忽略小幅反向振动,反向幅度可输入;维斯波里加入幅度对成交量的加成(努力和收获原则)">小幅反转比<input type="number" id="waveConectInput" min="0.01" max="10" step="0.01" value="0.5" style="display:none" />%</label><br />
+        " /><label title="维斯波忽略小幅反向振动,反向幅度可输入;维斯波里加入幅度对成交量的加成(努力和收获原则,小幅反向则累计成交量减去成交量*幅度)">小幅反转比<input type="number" id="waveConectInput" min="0.01" max="10" step="0.01" value="0.5" style="display:none" />%</label><br />
         <input name='oneDotRebuild' type="checkbox" checked="checked" id="oneDotRebuild" value="1" /><label title="单点图忽略一点转折的换列">单点重建</label>
     </div>
     <div id="right" style="align:center;overflow:auto">
@@ -158,6 +163,14 @@
             </div>
         </div>
     </div>
+    <div id="info">基本信息</br>
+        <a id="iwc" href="#" target="_blank">i问财</a>
+        <a id="dfcf" href="#" target="_blank">东方财富</a></br>
+        <a id="xgb" href="#" target="_blank">选股宝</a>
+        <a id="sl" href="#" target="_blank">扫雷</a></br>
+        <strong style="color: green;">风险评估(来自选股宝)</strong>
+        <div id="riskAssessment"></div>
+    </div>
     <script type="text/javascript">
     window.onload = function()
     {
@@ -175,14 +188,51 @@
         document.getElementById("endDate").value = endDate;
 
         TabInit();
-        loadStockList();
-        generate();
-        InitmouseCross();
-        document.onmousemove = function(e)
+        loadStockList().then(function()
         {
-            drawmouseCross(e);
-        }
+            generate();
+            InitmouseCross();
+            document.onmousemove = function(e)
+            {
+                drawmouseCross(e);
+            }
+        });
+
     }
+
+    function InitmouseCross()
+    {
+        var ox = document.createElement('div');
+        ox.id = 'cross_x';
+        var oy = document.createElement('div');
+        oy.id = 'cross_y';
+
+        ox.style.width = '100%';
+        ox.style.height = '1px';
+        //ox.style.backgroundColor = 'black';
+        ox.style.setProperty('background-color', 'gray', 'important')
+
+        var left = document.getElementById('left');
+        var info = document.getElementById('info');
+
+        ox.style.position = 'fixed';
+        ox.style.marginLeft = left.offsetWidth + "px";
+        ox.style.marginRight = info.offsetWidth + "px";
+
+        document.body.appendChild(ox);
+        oy.style.height = '100%';
+        oy.style.width = '1px';
+        //oy.style.backgroundColor = 'black';
+        oy.style.setProperty('background-color', 'gray', 'important')
+        oy.style.position = 'fixed';
+        oy.style.top = 0;
+
+        ox.style.display = "none";
+        oy.style.display = "none";
+        document.body.appendChild(oy);
+        //drawmouseCross(e);
+
+    };
 
     function drawmouseCross(e)
     {
@@ -191,8 +241,11 @@
         var e = e || event;
         var x = e.pageX;
         var y = e.pageY;
+        //var cvs = document.getElementById('kline');
         var left = document.getElementById('left');
-        if (x > left.offsetWidth)
+        var right = document.getElementById('right');
+
+        if (x > left.offsetWidth + 30 && x < right.offsetWidth + right.offsetLeft - 30 && y > 50 && y < right.offsetHeight - 30)
         {
             ox.style.display = "block";
             oy.style.display = "block";
@@ -251,35 +304,23 @@
         }
     }
 
-    function InitmouseCross()
+
+    document.onkeydown = function(event)
     {
-        var ox = document.createElement('div');
-        ox.id = 'cross_x';
-        var oy = document.createElement('div');
-        oy.id = 'cross_y';
-
-        ox.style.width = '100%';
-        ox.style.height = '1px';
-        //ox.style.backgroundColor = 'black';
-        ox.style.setProperty('background-color', 'gray', 'important')
-
-        ox.style.position = 'fixed';
-        ox.style.left = 0;
-        document.body.appendChild(ox);
-        oy.style.height = '100%';
-        oy.style.width = '1px';
-        //oy.style.backgroundColor = 'black';
-        oy.style.setProperty('background-color', 'gray', 'important')
-        oy.style.position = 'fixed';
-        oy.style.top = 0;
-
-        ox.style.display = "none";
-        oy.style.display = "none";
-        document.body.appendChild(oy);
-        //drawmouseCross(e);
-
-    };
+        var e = event || window.event || arguments.callee.caller.arguments[0];
+        if (e && e.keyCode == 38) //上键
+        {
+            scale = (scale * (1 + 0.1)).toFixed(2);
+            generate();
+        }
+        if (e && e.keyCode == 40) //下键
+        {
+            scale = (scale * (1 - 0.1)).toFixed(2);
+            generate();
+        }
+    }
     </script>
+    <!--iframe src="" id="iframesl" scrolling="auto">风险评估</iframe-->
 </body>
 
 </html>
