@@ -1,0 +1,35 @@
+:root {
+  /* 定义RGB变量 */
+  --red: 44;
+  --green: 135;
+  --blue: 255;
+  /* 文字颜色变色的临界值，建议0.5~0.6 */
+  --threshold: 0.5;
+  /* 深色边框出现的临界值，范围0~1，推荐0.8+*/
+  --border-threshold: 0.8;
+}
+
+.btn ,p{
+  /* 按钮背景色就是基本背景色 */
+  background: rgb(var(--red), var(--green), var(--blue));
+
+  /** 
+   * 使用sRGB Luma方法计算灰度（可以看成亮度）
+   * 算法为：
+   * lightness = (red * 0.2126 + green * 0.7152 + blue * 0.0722) / 255
+  */
+  --r: calc(var(--red) * 0.2126);
+  --g: calc(var(--green) * 0.7152);
+  --b: calc(var(--blue) * 0.0722);
+  --sum: calc(var(--r) + var(--g) + var(--b));
+  --lightness: calc(var(--sum) / 255);
+  
+  /* 设置颜色 */
+  color: hsl(0, 0%, calc((var(--lightness) - var(--threshold)) * -999999%));
+  
+  /* 确定边框透明度 */
+  --border-alpha: calc((var(--lightness) - var(--border-threshold)) * 100);
+  /* 设置边框相关样式 */
+  border: .2em solid;
+  border-color: rgba(calc(var(--red) - 50), calc(var(--green) - 50), calc(var(--blue) - 50), var(--border-alpha));
+}

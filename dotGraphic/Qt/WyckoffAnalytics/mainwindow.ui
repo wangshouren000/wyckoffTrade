@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1103</width>
+    <height>812</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <property name="spacing">
+     <number>1</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <layout class="QGridLayout" name="gridLayout" rowstretch="0" columnstretch="1,9">
+      <property name="horizontalSpacing">
+       <number>1</number>
+      </property>
+      <property name="verticalSpacing">
+       <number>2</number>
+      </property>
+      <item row="0" column="1">
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tabK">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <attribute name="title">
+          <string>K线图</string>
+         </attribute>
+         <widget class="QScrollArea" name="scrollArea">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>441</width>
+            <height>281</height>
+           </rect>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::RightToLeft</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>439</width>
+             <height>279</height>
+            </rect>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tabD">
+         <attribute name="title">
+          <string>点数图</string>
+         </attribute>
+         <widget class="QTableWidget" name="twDotGraphic">
+          <property name="geometry">
+           <rect>
+            <x>5</x>
+            <y>1</y>
+            <width>871</width>
+            <height>571</height>
+           </rect>
+          </property>
+          <property name="mouseTracking">
+           <bool>true</bool>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+         </widget>
+        </widget>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="sourceLabel">
+          <property name="text">
+           <string>来源</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="cmbSource"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="cycleLabel">
+          <property name="text">
+           <string>周期</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="cmbCycle"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="Label">
+          <property name="text">
+           <string>代码</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="cmbStock">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="mouseTracking">
+           <bool>false</bool>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="Label_2">
+          <property name="text">
+           <string>开始</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QDateEdit" name="dtbegin">
+          <property name="displayFormat">
+           <string>yyyy-MM-dd</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="Label_3">
+          <property name="text">
+           <string>结束</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QDateEdit" name="dtend">
+          <property name="displayFormat">
+           <string>yyyy-MM-dd</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>格值</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QLineEdit" name="lineEdit">
+          <property name="inputMethodHints">
+           <set>Qt::ImhPreferNumbers</set>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QGroupBox" name="groupBox">
+          <property name="title">
+           <string>绘制方法</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout_2">
+           <item row="0" column="0">
+            <widget class="QRadioButton" name="radClose">
+             <property name="text">
+              <string>收盘价</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QRadioButton" name="radHighLow">
+             <property name="text">
+              <string>高低价</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QGroupBox" name="groupBox_2">
+          <property name="title">
+           <string>反转点数</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout_3">
+           <item row="0" column="0">
+            <widget class="QRadioButton" name="radOne">
+             <property name="text">
+              <string>单点图</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QRadioButton" name="radThree">
+             <property name="text">
+              <string>三点图</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QRadioButton" name="radFive">
+             <property name="text">
+              <string>五点图</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="9" column="1">
+         <widget class="QPushButton" name="btGenerate">
+          <property name="text">
+           <string>generate</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1">
+         <widget class="QCheckBox" name="chkPercentLattice">
+          <property name="text">
+           <string>按比例计算格值</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QLineEdit" name="linePercentLatticeValue"/>
+        </item>
+        <item row="12" column="1">
+         <widget class="QLabel" name="lablinkXQ">
+          <property name="text">
+           <string>雪球</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="openExternalLinks">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="1">
+         <widget class="QLabel" name="lablinkXGB">
+          <property name="text">
+           <string>选股宝</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="1">
+         <widget class="QLabel" name="lablinkDFCF">
+          <property name="text">
+           <string>东方财富</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QPushButton" name="btAddMyStock">
+          <property name="text">
+           <string>加自选</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1103</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>

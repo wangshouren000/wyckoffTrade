@@ -12,13 +12,14 @@
     <script type="text/javascript" src="spellWord.js"></script>
     <script type="text/javascript" src="dotGraphic.js"></script>
     <script type="text/javascript" src="stock_list.js"></script>
+    <script type="text/javascript" src="common_stock_list.js"></script>
     <link href="dotGraphic.css" type="text/css" rel="stylesheet">
 </head>
 
 <body>
     <div id="left">
         <h4 style="text-align:center;margin-top: 10px;margin-bottom: 10px;">威科夫操盘工具</h4>
-        <input type="file" style="display:none" webkitdirectory directory multiple name="file" id="filePicker" onchange="loadFileList()" accept="*" value="加载离线股票数据" /><br />
+        <input type="file" style="display:none" webkitdirectory directory multiple name="file" id="filePicker" onchange="loadFileList()" accept="*" value="加载离线股票数据" />
         <label id="offlinel"><input id="offline" name="dataSource" type="radio" value="0" onchange="
             var offline = document.getElementById('offline');
             var onlinel = document.getElementById('onlinel');
@@ -33,7 +34,7 @@
 
             }
 
-        " />离线(需选择离线文件夹)</label>
+        " />离线</label><br />
         <label id="onlinel" style="color:red"><input id="online" checked="checked" name="dataSource" type="radio" value="1" onchange="
             var online = document.getElementById('online');
             var onlinel = document.getElementById('onlinel');
@@ -45,27 +46,25 @@
                 document.getElementById('div_datasource').style.display='block'
                 document.getElementById('filePicker').style.display='none'
             }
+            isOnlineStockList = true;
+            loadStockList().then(function()
+        {
+            code = document.getElementById('stock_list_self').options[0].value;
+            document.getElementById('code_input_self').value = code;
+            document.getElementById('code_input').value = code;
+            generate();
+        });
         " />在线</label><br />
         <div id="div_datasource">
-            <a>来源: </a>
-            <input id="datasource" style="width: 145px" type="text" list="datasource_list" name="cycle" value="东方财富" onchange="" onFocus="if (value !=''){value =''}" autocomplete="off" />
+            <a>来源：</a><input id="datasource" type="text" list="datasource_list" name="cycle" value="东方财富" onchange="" onFocus="if (value !=''){value =''}" autocomplete="off" />
             <datalist id="datasource_list">
                 <!--option label="新浪" value="新浪" id="sina" /-->
                 <option label="东方财富" value="东方财富" id="eastmoney" />
             </datalist><br /><br /></div>
-        <a>周期: </a>
-        <input id="cycle" type="text" list="cycle_list" name="cycle" value="日" onchange="
-        var code = document.getElementById('search-input').value;
-        if (code == '' || code == '请输入股票代码')
-        {
-            return;
-        }
-        else
-        {
-            generate();
-        }" onFocus="if (value !=''){value =''}" autocomplete="off" />
+        <a>周期：</a><input id="cycle" type="text" list="cycle_list" name="cycle" value="日" onchange="cycleOnchange()" onFocus="if (value !=''){value =''}" autocomplete="off" />
         <datalist id="cycle_list">
             <option label="日" value="日" id="day" />
+            <option label="1分钟" value="1分钟" id="min" />
             <option label="5分钟" value="5分钟" id="fmin" />
             <option label="15分钟" value="15分钟" id="ftmin" />
             <option label="30分钟" value="30分钟" id="tmin" />
@@ -77,16 +76,22 @@
         <label><input id="beforeRehabilitation" name="Rehabilitation" type="radio" checked="checked" value="1" />前复权</label> <br />
         <label><input id="afterRehabilitation" name="Rehabilitation" type="radio" value="2" />后复权</label> <br />
         </form>
-        <a>股票：</a>
-        <input id="search-input" type="text" list="stock_list" onchange="
+        <a style="color:red">自选：</a><input id="code_input_self" type="text" list="stock_list_self" onchange="
+        document.getElementById('latticeValue').value=0;
+        document.getElementById('code_input').value=document.getElementById('code_input_self').value;
+        scale=1;
+        generate();
+        " name="ss" value="" onFocus="if (value !=''){value =''}" onBlur="if (value ==''){value='请输入股票代码'}" autocomplete="off" style="ime-mode:disabled" />
+        <datalist id="stock_list_self">
+        </datalist><br />
+        <a>股票：</a><input id="code_input" type="text" list="stock_list" onchange="
         document.getElementById('latticeValue').value=0;
         scale=1;
         generate();
-        " name="ss" id="stocklist" value="000001" onFocus="if (value !=''){value =''}" onBlur="if (value ==''){value='请输入股票代码'}" autocomplete="off" />
+        " name="ss" value="" onFocus="if (value !=''){value =''}" onBlur="if (value ==''){value='请输入股票代码'}" autocomplete="off" style="ime-mode:disabled" />
         <datalist id="stock_list">
         </datalist><br />
-        <a>格值：</a>
-        <input type="number" id="latticeValue" min="0.01" max="10000" step="0.01" /><br /><br />
+        <a>格值：</a><input type="number" id="latticeValue" min="0.05" max="10000" step="0.05" /><br /><br />
         <!--form action="" method="get">类型：<br /-->
         <label><input id="oneDot" name="dotInterval" type="radio" checked="checked" value="1" />单点图</label>
         <label><input id="threeDot" name="dotInterval" type="radio" value="3" />三点图</label><br />
@@ -95,14 +100,13 @@
         <!--form action="" method="get">构建：--><br />
         <label><input id="close" name="buildType" type="radio" value="1" />收盘价</label>
         <label><input id="highLow" name="buildType" type="radio" checked="checked" value="0" />高低价</label> <br /><br />
-        <!--/form> <br /-->
         <a>开始：</a><input type="date" id="beginDate" /><br />
         <a>结束：</a><input type="date" id="endDate" /><br />
-        <!--form action="" method="get"><br /--><br />
+        <input name='highLowConnect' type="checkbox" id="highLowConnect" /><label title="">连接高低点</label><br />
         <label><input id="kline_g" name="lineType" type="radio" checked="checked" value="1" />K线图</label>
         <label><input id="bamboo_g" name="lineType" type="radio" value="0" />竹线图</label> <br />
         <button type="button" id="btGenerate" onclick="
-        scale=1;
+        //scale=1;
         generate();
         ">生成图形</button><br />
         <input name='percentLatticeCheck' type="checkbox" id="percentLatticeCheck" value="0" onchange="
@@ -113,33 +117,20 @@
             {
                 input.style.display='inline';
                 document.getElementById('latticeValue').value=0;
+                input.value=2;
             }
             else
             {
                 input.style.display='none'
             }
-        " /><label title="格值可以按照当前价格的比例计算,比例默认2%,可输入">格值比例<input type="number" id="percentlatticeInput" min="0.1" max="100" step="0.1" value="2" style="display:none" />%</label><br />
-        <input name='waveConect' type="checkbox" id="waveConect" value="1" onchange="
-            var check = document.getElementById('waveConect');
-            var input = document.getElementById('waveConectInput');
-
-            if(check.checked)
-            {
-                input.style.display='inline';
-            }
-            else
-            {
-                input.style.display='none'
-            }
-        " /><label title="维斯波忽略小幅反向振动,反向幅度可输入;维斯波里加入幅度对成交量的加成(努力和收获原则,小幅反向则累计成交量减去成交量*幅度)">小幅反转比<input type="number" id="waveConectInput" min="0.01" max="10" step="0.01" value="0.5" style="display:none" />%</label><br />
-        <input name='oneDotRebuild' type="checkbox" checked="checked" id="oneDotRebuild" value="1" /><label title="单点图忽略一点转折的换列">单点重建</label>
+        " /><label title="格值可以按照当前价格的比例计算,比例默认2%,可输入">格值比例(%)<input type="number" id="percentlatticeInput" min="1" max="100" step="1" value="1" style="display:none;width: 30px" /></label><br />
     </div>
     <div id="right" style="align:center;overflow:auto">
         <div id="tab">
             <!--选项的头部-->
             <div id="tab-header">
                 <ul>
-                    <li class="selected" id="k_wave_tab">K线+波形图</li>
+                    <li class="selected" id="k_wave_tab">维斯波</li>
                     <li id="dot_tab">点数图</li>
                 </ul>
             </div>
@@ -147,7 +138,7 @@
             <div id="tab-content">
                 <div class="dom" id="dom" style="display: block;">
                     <ul>
-                        <li>
+                        <li id="likline">
                             <canvas id="kline"></canvas>
                         </li>
                     </ul>
@@ -155,7 +146,7 @@
                 <div id="kline_tip"></div>
                 <div class="dom" id="dom">
                     <ul>
-                        <li>
+                        <li id="lidotGraphic">
                             <canvas id="dotGraphic"></canvas>
                         </li>
                     </ul>
@@ -164,22 +155,28 @@
             </div>
         </div>
     </div>
-    <div id="info">基本信息</br>
-        <a id="iwc" href="#" target="_blank">i问财</a>
-        <a id="dfcf" href="#" target="_blank">东方财富</a></br>
-        <a id="xgb" href="#" target="_blank">选股宝</a>
-        <a id="sl" href="#" target="_blank">扫雷</a></br>
-        <strong style="color: green;">风险评估(来自选股宝)</strong>
+    <div id="info">基本信息
+        <div id="baseInfo" style="color: red;font-size: 12px"></div>
+        <div id="links">相关链接</br>
+            <a id="iwc" href="#" target="_blank">i问财</a>
+            <a id="dfcf" href="#" target="_blank">东方财富</a></br>
+            <a id="xgb" href="#" target="_blank">选股宝</a>
+            <!--a id="sl" href="#" target="_blank">扫雷</a-->
+            <a id="jrj" href="#" target="_blank">金融界</a>
+            <a id="xq" href="#" target="_blank">雪球</a></br>
+            <strong style="color: black;font-size: 18px">风险评估(来自选股宝)</strong>
+        </div>
         <div id="riskAssessment"></div>
     </div>
     <script type="text/javascript">
+    var curLiId;
     window.onload = function()
     {
         var date = new Date();
         var y1 = date.getFullYear();
         var m1 = (Array(2).join('0') + (date.getMonth() + 1)).slice(-2);
         var d1 = (Array(2).join('0') + date.getDate()).slice(-2);
-        date.setDate(date.getDate() - 365);
+        date.setDate(date.getDate() - 800);
         var y2 = date.getFullYear();
         var m2 = (Array(2).join('0') + (date.getMonth() + 1)).slice(-2);
         var d2 = (Array(2).join('0') + date.getDate()).slice(-2);
@@ -189,78 +186,123 @@
         document.getElementById("endDate").value = endDate;
 
         TabInit();
+        InitmouseCross();
         loadStockList().then(function()
         {
+            code = document.getElementById("stock_list_self").options[0].value;
+            document.getElementById("code_input_self").value = code;
+            document.getElementById("code_input").value = code;
             generate();
-            InitmouseCross();
-            document.onmousemove = function(e)
-            {
-                drawmouseCross(e);
-            }
         });
-
+        if (isOnlineStockList)
+        {
+            setInterval("IntervalFunc()", 60000);
+        }
+    }
+    //时间间隔执行函数
+    function IntervalFunc()
+    {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = now.getMonth();
+        var day = now.getDate();
+        var weekDay = now.getDay();
+        var start = new Date(year, month, day, 9, 30);
+        var end = new Date(year, month, day, 15, 0);
+        if (now > start && now < end && (weekDay > 0 && weekDay < 6) && isOnline)
+        {
+            generate()
+        }
     }
 
     function InitmouseCross()
     {
-        var ox = document.createElement('div');
-        ox.id = 'cross_x';
-        var oy = document.createElement('div');
-        oy.id = 'cross_y';
+        var cx = document.createElement('div');
+        cx.id = 'cross_x';
+        var cy = document.createElement('div');
+        cy.id = 'cross_y';
+        var ctext = document.createElement('div');
+        ctext.id = 'cross_text';
 
-        ox.style.width = '100%';
-        ox.style.height = '1px';
-        //ox.style.backgroundColor = 'black';
-        ox.style.setProperty('background-color', 'gray', 'important')
 
-        var left = document.getElementById('left');
-        var info = document.getElementById('info');
-
-        ox.style.position = 'fixed';
-        ox.style.marginLeft = left.offsetWidth + "px";
-        ox.style.marginRight = info.offsetWidth + "px";
-
-        document.body.appendChild(ox);
-        oy.style.height = '100%';
-        oy.style.width = '1px';
-        //oy.style.backgroundColor = 'black';
-        oy.style.setProperty('background-color', 'gray', 'important')
-        oy.style.position = 'fixed';
-        oy.style.top = 0;
-
-        ox.style.display = "none";
-        oy.style.display = "none";
-        document.body.appendChild(oy);
-        //drawmouseCross(e);
-
-    };
-
-    function drawmouseCross(e)
-    {
-        var ox = document.getElementById('cross_x');
-        var oy = document.getElementById('cross_y');
-        var e = e || event;
-        var x = e.pageX;
-        var y = e.pageY;
-        //var cvs = document.getElementById('kline');
         var left = document.getElementById('left');
         var right = document.getElementById('right');
 
+        cx.style.height = '1px';
+        //cx.style.backgroundColor = 'black';
+        cx.style.setProperty('background-color', 'gray', 'important')
+        cx.style.zIndex = 100;
+        cx.style.position = 'absolute';
+        cx.style.marginLeft = left.offsetWidth + "px";
+        cx.style.width = right.offsetWidth + "px";
+        cx.style.display = "none";
+        document.body.appendChild(cx);
+
+        cy.style.height = '100%';
+        cy.style.width = '1px';
+        //cy.style.backgroundColor = 'black';
+        cy.style.setProperty('background-color', 'gray', 'important')
+        cy.style.zIndex = 100;
+        cy.style.position = 'absolute';
+        cy.style.top = 0;
+        cy.style.display = "none";
+        document.body.appendChild(cy);
+
+        ctext.style.height = '10px';
+        ctext.style.width = '10px';
+        ctext.style.setProperty('background-color', 'white', 'important')
+        ctext.style.zIndex = 3;
+        ctext.style.position = 'absolute';
+        ctext.style.top = 0;
+        ctext.style.display = "none";
+        document.body.appendChild(ctext);
+    };
+    //移动鼠标十字星
+    function drawmouseCross(e)
+    {
+        var cx = document.getElementById('cross_x');
+        var cy = document.getElementById('cross_y');
+        var ctext = document.getElementById('cross_text');
+        ctext.style.display = "none";
+
+        var e = e || event;
+        var x = e.pageX;
+        var y = e.pageY;
+        var left = document.getElementById('left');
+        var right = document.getElementById('right');
+        var offsetY = spaceK * offsetKY;
         if (x > left.offsetWidth + 30 && x < right.offsetWidth + right.offsetLeft - 30 && y > 50 && y < right.offsetHeight - 30)
         {
-            ox.style.display = "block";
-            oy.style.display = "block";
-            ox.style.top = y + 'px';
-            oy.style.left = x + 'px';
-            //document.getElementById('html').innerHTML = 'x : ' + x + '<br/>y : ' + y;
+            cx.style.display = "block";
+            cy.style.display = "block";
+            cx.style.top = y + 'px';
+            cy.style.left = x + 'px';
+            ctext.style.top = (y) + 'px';
+            ctext.style.left = (right.offsetWidth + right.offsetLeft - 35) + 'px';
+            ctext.style.font = "normal bold 6pt 宋体"
+            ctext.style.color = "blue"
+            var offset = offsetKY;
+            var curSpace = spaceK;
+            if (curLiId == 1)
+            {
+                offset = offsetDY;
+                curSpace = spaceD;
+            }
+            var price = (parseFloat(stockInfo.maxPrice) + parseFloat(offset) * parseFloat(latticeValue) - parseFloat(parseFloat(e.layerY) * parseFloat(latticeValue) / curSpace)).toFixed(2);
+            if (parseFloat(stockInfo.maxPrice) > parseFloat(price) && parseFloat(price) > parseFloat(stockInfo.minPrice))
+            {
+                ctext.style.display = "block";
+                ctext.innerHTML = price;
+            }
         }
         else
         {
-            ox.style.display = "none";
-            oy.style.display = "none";
+            cx.style.display = "none";
+            cy.style.display = "none";
+            ctext.style.display = "none";
         }
     }
-
+    //tab页初始化
     function TabInit()
     {
         // 拿到所有的标题(li标签) 和 标题对应的内容(div)
@@ -274,9 +316,6 @@
             // 取出li标签
             var li = titles[i];
             li.id = i;
-
-            //        console.log(li);
-            // 监听鼠标的移动
             li.onclick = function()
             {
                 for (var j = 0; j < titles.length; j++)
@@ -288,6 +327,7 @@
                 divs[this.id].style.display = 'block';
                 divs[this.id].style.backgroundcolor = "white";
                 var style;
+                curLiId = this.id;
                 if (this.id == 0)
                 {
                     style = document.getElementById("kline").style;
@@ -298,14 +338,13 @@
                 }
                 var ul = document.getElementById("tab-header").getElementsByTagName('ul')[0];
                 var paddingLeft = style.width.replace('px', '');
-                paddingLeft = (parseInt(paddingLeft) - 150) + "px"
+                paddingLeft = (parseInt(paddingLeft) - 250) + "px"
                 ul.style.paddingLeft = paddingLeft;
                 scrollBottomAndRightTag(document.getElementById("right"));
             }
         }
     }
-
-
+    //键盘监控
     document.onkeydown = function(event)
     {
         var e = event || window.event || arguments.callee.caller.arguments[0];
@@ -320,8 +359,112 @@
             generate();
         }
     }
+
+    var eventHandle = {
+        getEvent: function(event)
+        {
+            return event || window.event;
+        },
+        addEvent: function(element, type, handler)
+        {
+            if (element.addEventListener)
+            {
+                element.addEventListener(type, handler, false);
+            }
+            else if (element.attachEvent)
+            {
+                element.attachEvent('on' + type, handler);
+            }
+            else
+            {
+                element['on' + type] = handler;
+            }
+        },
+        getWheelDelta: function(event)
+        {
+            return event.wheelDelta ? event.wheelDelta : (-event.detail) * 40;
+        }
+    }
+    //鼠标监控
+    function mouseHandle(event)
+    {
+        event = eventHandle.getEvent(event);
+        var left = document.getElementById('left');
+        var right = document.getElementById('right');
+        if (event.pageX > left.offsetWidth && event.pageX < right.offsetWidth)
+        {
+            var delta = eventHandle.getWheelDelta(event);
+            deltaValue = parseFloat(delta / Math.abs(delta));
+            var interval = 0.05;
+            if (scale <= interval && deltaValue < 0)
+            {
+                interval = 0.01;
+            }
+            scale = (parseFloat(scale) + deltaValue * interval).toFixed(2);
+            if (scale < 0)
+            {
+                scale = 0.01;
+            }
+            generate();
+        }
+    }
+    //周期选择事件
+    function cycleOnchange()
+    {
+
+        var code = document.getElementById('code_input').value;
+        if (code == '' || code == '请输入股票代码')
+        {
+            return;
+        }
+        else
+        {
+            var cycle = document.getElementById("cycle").value;
+            var date = new Date();
+            var days = 800;
+            if (cycle == '5分钟' || cycle == '1分钟')
+            {
+                days = 10;
+            }
+            if (cycle == '15分钟')
+            {
+                days = 20;
+            }
+            if (cycle == '30分钟')
+            {
+                days = 50;
+            }
+            if (cycle == '60分钟')
+            {
+                days = 120;
+            }
+            if (cycle == '周')
+            {
+                days = 2000;
+            }
+            if (cycle == '月')
+            {
+                days = 8000;
+            }
+            var weekDay = date.getDay();
+            if (weekDay == 1 || weekDay == 6 || weekDay == 0)
+            {
+                days = days + 2;
+            }
+            date.setDate(date.getDate() - days);
+            var y2 = date.getFullYear();
+            var m2 = (Array(2).join('0') + (date.getMonth() + 1)).slice(-2);
+            var d2 = (Array(2).join('0') + date.getDate()).slice(-2);
+            var beginDate = y2 + '-' + m2 + '-' + d2;
+            document.getElementById("latticeValue").value = 0;
+            document.getElementById('beginDate').value = beginDate;
+            generate();
+        }
+    }
+
+    eventHandle.addEvent(document, 'mousewheel', mouseHandle);
+    eventHandle.addEvent(document, 'DOMMouseScroll', mouseHandle);
     </script>
-    <!--iframe src="" id="iframesl" scrolling="auto">风险评估</iframe-->
 </body>
 
 </html>
