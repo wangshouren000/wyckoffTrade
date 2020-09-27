@@ -9,7 +9,7 @@
         获取日线数据,数据可能会滞后一天
 在线数据来源2:
     东方财富:
-    http://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery&secid=1.603917&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58&klt=101&fqt=0&beg=20200710&end=20200716
+    http://push2his.eastmoney.com/api/qt/stock/kline/get?&secid=1.603917&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58&klt=101&fqt=0&beg=20200710&end=20200716
 
     secid=1.603917
           sh 1 sz 0 +code
@@ -45,6 +45,7 @@
     var beginDate;
     var endDate;
     var curList;
+    var curDataList;
     var isKline;
     var lineWidth = 1;
     var cycle;
@@ -113,7 +114,6 @@ function DrawPointAndFigure(returnValue)
         //maxSpace = 25;
         space = minSpace * scale;
         var yIndex = returnValue.stockInfo.endIndex - returnValue.stockInfo.startIndex + offsetY;
-        console.log(returnValue.stockInfo.endIndex +"|"+ returnValue.stockInfo.startIndex+"|"+stockInfo.latticeValue)
         var xIndex = dotValueList[0].position.x + offsetX;
 
         canvasD.width = space * (xIndex + offsetXL);
@@ -1778,8 +1778,9 @@ function loadStockList()
     //stockArray=new Array(stockList.length);
     if (isOnlineStockList)
     {
-        var url = "http://26.push2.eastmoney.com/api/qt/clist/get?cb=jQuery&pn=1&pz=5000&po=1&np=1&fltt=2&invt=2&fid=f3&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f13,f14";
-
+        //var url = "http://26.push2.eastmoney.com/api/qt/clist/get?cb=jQuery&pn=1&pz=5000&po=1&np=1&fltt=2&invt=2&fid=f3&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f13,f14";
+        //去掉cb直接返回json
+        var url = "http://26.push2.eastmoney.com/api/qt/clist/get?&pn=1&pz=5000&po=1&np=1&fltt=2&invt=2&fid=f3&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f13,f14";
         return getUrlContent("GET", url, "text").then(function(result)
         {
             if (result == null || result == "")
@@ -1789,31 +1790,31 @@ function loadStockList()
             }
             //东方财富的数据不是标准json
             //获得字符串的开始位置
-            var start = result.indexOf('[');
-            var end = result.indexOf(']');
-            var regstr = new RegExp('"', "g");
-            var regstr1 = new RegExp('{', "g");
-            var regstr2 = new RegExp('}', "g");
-            var regstr3 = new RegExp('f12', "g");
-            var regstr4 = new RegExp('f13', "g");
-            var regstr5 = new RegExp('f14', "g");
-            var regstr6 = new RegExp(':', "g");
-            var str = result.substring(start + 1, end).replace(regstr, '')
-            str = str.replace(regstr1, '')
-            str = str.replace(regstr2, '')
-            str = str.replace(regstr3, '')
-            str = str.replace(regstr4, '')
-            str = str.replace(regstr5, '')
-            str = str.replace(regstr6, '')
+            // var start = result.indexOf('[');
+            // var end = result.indexOf(']');
+            // var regstr = new RegExp('"', "g");
+            // var regstr1 = new RegExp('{', "g");
+            // var regstr2 = new RegExp('}', "g");
+            // var regstr3 = new RegExp('f12', "g");
+            // var regstr4 = new RegExp('f13', "g");
+            // var regstr5 = new RegExp('f14', "g");
+            // var regstr6 = new RegExp(':', "g");
+            // var str = result.substring(start + 1, end).replace(regstr, '')
+            // str = str.replace(regstr1, '')
+            // str = str.replace(regstr2, '')
+            // str = str.replace(regstr3, '')
+            // str = str.replace(regstr4, '')
+            // str = str.replace(regstr5, '')
+            // str = str.replace(regstr6, '')
 
-            var dataList = str.split(',');
-
-            var reg = new RegExp('-', "g");
-            var reg1 = new RegExp(':', "g");
-            var reg2 = new RegExp(' ', "g");
+            //var dataList = str.split(',');
+            var dataList = JSON.parse(result);
+            // var reg = new RegExp('-', "g");
+            // var reg1 = new RegExp(':', "g");
+            // var reg2 = new RegExp(' ', "g");
             var lastClose = 0;
             var list = [];
-            var distance = 3;
+            //var distance = 3;
 
             //指数 自选
             //commonStocklistData
@@ -1828,12 +1829,16 @@ function loadStockList()
                 $('#stock_list_self').append(html);
                 stockArray[code] = obj;
             }
-            for (var i = 0; i < dataList.length / distance; i++)
+            //for (var i = 0; i < dataList.length / distance; i++)
+            for (var i = 0; i < dataList.data.total; i++)
             {
 
-                var code0 = dataList[i * distance];
-                var type0 = dataList[i * distance + 1];
-                var name0 = dataList[i * distance + 2];
+                // var code0 = dataList[i * distance];
+                // var type0 = dataList[i * distance + 1];
+                // var name0 = dataList[i * distance + 2];f12,f13,f14
+                var code0 = dataList.data.diff[i]["f12"];
+                var type0 = dataList.data.diff[i]["f13"];
+                var name0 = dataList.data.diff[i]["f14"];
                 var spell = makePy(name0)[0];
                 if (code0 == "000001" || stockArray[code0] != null)
                 {
@@ -1917,6 +1922,7 @@ function ReadStockData()
             reader.onload = function()
             {
                 var dataList = this.result.split("\n");
+                curDataList=dataList;
                 resolve(dataList)
             }
         })
@@ -2006,13 +2012,22 @@ function DrawOX()
     //本地数据的读取是异步进行的,这里的意思是：
     //ReadStockData函数执行完成后在执行StartDraw
     //这就达到了单线程处理的目的
-    ReadStockData().then(function(result)
-    { //处理 result
-        StartDraw(result);
+    if(scale==1)
+    {
+        ReadStockData().then(function(result)
+        { //处理 result
+            StartDraw(result);
+            doc = document.getElementById("right");
+            scrollBottomAndRightTag(doc)
+
+        });
+    }
+    else
+    {
+        StartDraw(curDataList);
         doc = document.getElementById("right");
         scrollBottomAndRightTag(doc)
-
-    });
+    }
 
 }
 
@@ -2288,121 +2303,128 @@ var originalUserAgent = navigator.userAgent;
 
 function fillInfo()
 {
-    //基本信息
-    var codename = "<b>[" + code + "]    " + name + "</b></br>";
-    var lastData = curList[curList.length - 1];
-    var preData = curList[curList.length - 2];
-
-    var dateStr = "今日:" + lastData.date;
-    var rate = (latticeValue * 100 / stockInfo.maxPrice).toFixed(2) + "%~" + parseFloat(latticeValue * 100 / stockInfo.minPrice).toFixed(2) + "%";
-    var rate1 = parseFloat(lastData.close / preData.close * 100 - 100).toFixed(2);
-    var colorRate1 = rate1 > 0 ? "red" : "blue";
-    var priceNowStr = "&nbsp;&nbsp;<p style=\"display:inline;font-weight:bolder; color:" + colorRate1 + "!important\">收:" + lastData.close + "</p>";
-    var priceStr = "<p style=\"color:black !important\">高:" + lastData.high + "&nbsp;&nbsp;低:" + lastData.low + "&nbsp;&nbsp;换:" + lastData.turnoverRate + "%</p>";
-
-    var rateStr = "<p style=\"color:black !important\">格幅:" + rate + "</p><p style=\"color:black !important\">缩放:" + (scale * 100).toFixed(0) + "%</font><p style=\"display:inline;font-weight:bolder; color:" + colorRate1 + "!important\">涨幅:" + rate1 + "%</p>";
-
-    document.title = name + " 收:" + lastData.close;
-    var profit = "";
-    var obj = stockArray[code];
-    if (obj.length == 5 && obj[4] !== "")
+    if(scale==1)
     {
-        var ratep = (lastData.close / parseFloat(obj[4]) * 100 - 100).toFixed(2);
-        var profitStr = (ratep > 0 ? "盈利" : "亏损");
-        var colorp = (ratep > 0 ? "Crimson" : "DarkGreen");
-        var fsize = "10pt";
-        if (parseFloat(ratep) > 3)
-        {
-            fsize = "25pt";
-        }
-        if (parseFloat(ratep) < -2)
-        {
-            fsize = "25pt";
-        }
-        profit = "<p style=\"text-align: center;font-size:" + fsize + ";font-weight:bolder; color:" + colorp + "!important\">" + profitStr + ":" + Math.abs(ratep) + "%" + "[" + obj[4] + "]" + "</p>";
-    }
-    var strHtml = codename + dateStr + priceNowStr + priceStr + rateStr + profit;
-    document.getElementById("baseInfo").innerHTML = strHtml;
+        //基本信息
+        var codename = "<b>[" + code + "]    " + name + "</b></br>";
+        var lastData = curList[curList.length - 1];
+        var preData = curList[curList.length - 2];
 
-    var iwc = "http://www.iwencai.com/unifiedwap/result?w=" + code + "&querytype=stock&issugs"
-    //var sl = "https://m.xuangubao.cn/stocklabel/" + code + "." + (type == "sh" ? "ss" : "sz") + "?mine=true"
-    var dfcf = "http://quote.eastmoney.com/" + type + code + ".html"
-    var xgb = "https://xuangubao.cn/stock/" + code + (type == "sh" ? ".SS" : ".SZ");
-    var xq = "https://xueqiu.com/S/" + type.toUpperCase() + code;
-    var sl1 = "https://api-ddc-wscn.xuangubao.cn/extract/stock_risk/full_desc?stock_code=" + code + (type == "sh" ? ".ss" : ".sz");
-    var indexList = ["000001", "399001", "399006", "399005", "000300"];
-    var codeNew = code;
-    if (indexList.indexOf(code) > -1)
-    {
-        codeNew = type + code;
-    }
-    var jrj = "http://stock.jrj.com.cn/share," + codeNew + ".shtml";
-    document.getElementById("iwc").href = iwc;
-    document.getElementById("dfcf").href = dfcf;
-    document.getElementById("xgb").href = xgb;
-    //document.getElementById("sl").href = sl;
-    document.getElementById("xq").href = xq;
-    document.getElementById("jrj").href = jrj;
+        var dateStr = "今日:" + lastData.date;
+        var rate = (latticeValue * 100 / stockInfo.maxPrice).toFixed(2) + "%~" + parseFloat(latticeValue * 100 / stockInfo.minPrice).toFixed(2) + "%";
+        var rate1 = parseFloat(lastData.close / preData.close * 100 - 100).toFixed(2);
+        var colorRate1 = rate1 > 0 ? "red" : "blue";
+        var priceNowStr = "&nbsp;&nbsp;<p style=\"display:inline;font-weight:bolder; color:" + colorRate1 + "!important\">收:" + lastData.close + "</p>";
+        var priceStr = "<p style=\"color:black !important\">高:" + lastData.high + "&nbsp;&nbsp;低:" + lastData.low + "&nbsp;&nbsp;换:" + lastData.turnoverRate + "%</p>";
 
-    return getUrlContent("GET", sl1, "json").then(function(jsonStr)
-    {
-        if (jsonStr == null || jsonStr == "")
+        var rateStr = "<p style=\"color:black !important\">格幅:" + rate + "</p><p id=\"scale\" style=\"color:black !important\">缩放:" + (scale * 100).toFixed(0) + "%</font><p style=\"display:inline;font-weight:bolder; color:" + colorRate1 + "!important\">涨幅:" + rate1 + "%</p>";
+
+        document.title = name + " 收:" + lastData.close;
+        var profit = "";
+        var obj = stockArray[code];
+        if (obj.length == 5 && obj[4] !== "")
         {
-            //alert("未获取到数据,请检查网络连接状况或者浏览器是否允许跨域访问!");
-            return;
-        }
-        //console.log(jsonStr);
-        if (jsonStr.message == "OK")
-        {
-            var risk_level = jsonStr.data.risk_level;
-            switch (risk_level)
+            var ratep = (lastData.close / parseFloat(obj[4]) * 100 - 100).toFixed(2);
+            var profitStr = (ratep > 0 ? "盈利" : "亏损");
+            var colorp = (ratep > 0 ? "Crimson" : "DarkGreen");
+            var fsize = "10pt";
+            if (parseFloat(ratep) > 3)
             {
-                case 0:
-                    risk_level = "<a style=\"color:green\">风险级别：安全";
-                    break;
-                case 1:
-                    risk_level = "<a style=\"color:#ff7575;background-color:yellow;font-weight:bold\">风险级别：低风险";
-                    break;
-                case 2:
-                    risk_level = "<a style=\"color:#FF5151;background-color:yellow;font-weight:bold\">风险级别：中风险";
-                    break;
-                case 3:
-                    risk_level = "<a style=\"color:red;background-color:yellow;font-weight:bold\">风险级别：高风险";
-                    break;
-
+                fsize = "25pt";
             }
-            var html = "<a>星级：" + jsonStr.data.stars + "</a>" +
-                risk_level + "</a></br>" +
-                "<a style=\"color:red\">危险项：" + jsonStr.data.risk_count + "</a>" +
-                "<a style=\"color:green\">安全项：" + jsonStr.data.safe_count + "</a>"
-            $('#riskAssessment').html("");
-            $('#riskAssessment').append(html);
-            var htmlTable = "<table id=\"riskInfoTable\"><tr><th>星级</th><th>权重</th><th>类别</th><th>结论</th><th>描述</th></tr>";
-            for (var i = 0; i < jsonStr.data.items.length; i++)
+            if (parseFloat(ratep) < -2)
             {
-                var item = jsonStr.data.items[i];
-                var tr = "<tr>";
-                var str = item["risk_name"];
-                var reg1 = RegExp(/退市风险/);
-                var reg2 = RegExp(/公司负面消息/);
-                var reg3 = RegExp(/监管处罚/);
-                if ((str.match(reg1) || str.match(reg2) || str.match(reg3) || parseInt(item["stars"]) > 0) && item["title"] != "无")
+                fsize = "25pt";
+            }
+            profit = "<p style=\"text-align: center;font-size:" + fsize + ";font-weight:bolder; color:" + colorp + "!important\">" + profitStr + ":" + Math.abs(ratep) + "%" + "[" + obj[4] + "]" + "</p>";
+        }
+        var strHtml = codename + dateStr + priceNowStr + priceStr + rateStr + profit;
+        document.getElementById("baseInfo").innerHTML = strHtml;
+
+        var iwc = "http://www.iwencai.com/unifiedwap/result?w=" + code + "&querytype=stock&issugs"
+        //var sl = "https://m.xuangubao.cn/stocklabel/" + code + "." + (type == "sh" ? "ss" : "sz") + "?mine=true"
+        var dfcf = "http://quote.eastmoney.com/" + type + code + ".html"
+        var xgb = "https://xuangubao.cn/stock/" + code + (type == "sh" ? ".SS" : ".SZ");
+        var xq = "https://xueqiu.com/S/" + type.toUpperCase() + code;
+        var sl1 = "https://api-ddc-wscn.xuangubao.cn/extract/stock_risk/full_desc?stock_code=" + code + (type == "sh" ? ".ss" : ".sz");
+        var indexList = ["000001", "399001", "399006", "399005", "000300"];
+        var codeNew = code;
+        if (indexList.indexOf(code) > -1)
+        {
+            codeNew = type + code;
+        }
+        var jrj = "http://stock.jrj.com.cn/share," + codeNew + ".shtml";
+        document.getElementById("iwc").href = iwc;
+        document.getElementById("dfcf").href = dfcf;
+        document.getElementById("xgb").href = xgb;
+        //document.getElementById("sl").href = sl;
+        document.getElementById("xq").href = xq;
+        document.getElementById("jrj").href = jrj;
+
+        return getUrlContent("GET", sl1, "json").then(function(jsonStr)
+        {
+            if (jsonStr == null || jsonStr == "")
+            {
+                //alert("未获取到数据,请检查网络连接状况或者浏览器是否允许跨域访问!");
+                return;
+            }
+            //console.log(jsonStr);
+            if (jsonStr.message == "OK")
+            {
+                var risk_level = jsonStr.data.risk_level;
+                switch (risk_level)
                 {
-                    tr = "<tr style=\"color:red;font-weight:bold\">";
-                    htmlTable = htmlTable + tr +
-                        "<th>" + item["stars"] + "</th>" +
-                        "<th>" + item["weight"] + "</th>" +
-                        "<th>" + item["risk_name"] + "</th>" +
-                        "<th>" + item["title"] + "</th>" +
-                        "<th>" + item["description"] + "</th>" +
-                        "</tr>"
-                }
+                    case 0:
+                        risk_level = "<a style=\"color:green\">风险级别：安全";
+                        break;
+                    case 1:
+                        risk_level = "<a style=\"color:#ff7575;background-color:yellow;font-weight:bold\">风险级别：低风险";
+                        break;
+                    case 2:
+                        risk_level = "<a style=\"color:#FF5151;background-color:yellow;font-weight:bold\">风险级别：中风险";
+                        break;
+                    case 3:
+                        risk_level = "<a style=\"color:red;background-color:yellow;font-weight:bold\">风险级别：高风险";
+                        break;
 
+                }
+                var html = "<a>星级：" + jsonStr.data.stars + "</a>" +
+                    risk_level + "</a></br>" +
+                    "<a style=\"color:red\">危险项：" + jsonStr.data.risk_count + "</a>" +
+                    "<a style=\"color:green\">安全项：" + jsonStr.data.safe_count + "</a>"
+                $('#riskAssessment').html("");
+                $('#riskAssessment').append(html);
+                var htmlTable = "<table id=\"riskInfoTable\"><tr><th>星级</th><th>权重</th><th>类别</th><th>结论</th><th>描述</th></tr>";
+                for (var i = 0; i < jsonStr.data.items.length; i++)
+                {
+                    var item = jsonStr.data.items[i];
+                    var tr = "<tr>";
+                    var str = item["risk_name"];
+                    var reg1 = RegExp(/退市风险/);
+                    var reg2 = RegExp(/公司负面消息/);
+                    var reg3 = RegExp(/监管处罚/);
+                    if ((str.match(reg1) || str.match(reg2) || str.match(reg3) || parseInt(item["stars"]) > 0) && item["title"] != "无")
+                    {
+                        tr = "<tr style=\"color:red;font-weight:bold\">";
+                        htmlTable = htmlTable + tr +
+                            "<th>" + item["stars"] + "</th>" +
+                            "<th>" + item["weight"] + "</th>" +
+                            "<th>" + item["risk_name"] + "</th>" +
+                            "<th>" + item["title"] + "</th>" +
+                            "<th>" + item["description"] + "</th>" +
+                            "</tr>"
+                    }
+
+                }
+                htmlTable = htmlTable + "</table>";
+                $('#riskAssessment').append(htmlTable);
             }
-            htmlTable = htmlTable + "</table>";
-            $('#riskAssessment').append(htmlTable);
-        }
-    });
+        });
+    }
+    else
+    {
+        document.getElementById("scale").innerHTML="缩放:" + (scale * 100).toFixed(0) + "%";
+    }
 }
 
 function changeUserAgent(userAgent)
@@ -2734,8 +2756,9 @@ function getOnlineData()
         }
 
         var typeNum = (type == "sh" ? "1" : "0");
-        var url = "http://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery&secid=" + typeNum + "." + code + "&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf61&klt=" + klt + "&fqt=" + rehabilitation + "&beg=" + beginDate + "&end=" + endDate;
-
+        //var url = "http://push2his.eastmoney.com/api/qt/stock/kline/get?cb=jQuery&secid=" + typeNum + "." + code + "&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf61&klt=" + klt + "&fqt=" + rehabilitation + "&beg=" + beginDate + "&end=" + endDate;
+        //去掉cb=jQuery 得到json
+        var url = "http://push2his.eastmoney.com/api/qt/stock/kline/get?&secid=" + typeNum + "." + code + "&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf61&klt=" + klt + "&fqt=" + rehabilitation + "&beg=" + beginDate + "&end=" + endDate;
         return getUrlContent("GET", url, "text").then(function(result)
         {
             if (result == null || result == "")
@@ -2745,31 +2768,43 @@ function getOnlineData()
             }
             //东方财富的数据不是标准json
             //获得字符串的开始位置
-            var start = result.indexOf('[');
-            var end = result.indexOf(']');
-            //日期,股票代码,名称,开盘价,收盘价,最高价,最低价,前收盘,成交量,成交金额 date,open,close,high,low,volume,amount
-            var regstr = new RegExp('"', "g");
-            var str = result.substring(start + 1, end).replace(regstr, '')
-            var dataList = str.split(',');
+            // var start = result.indexOf('[');
+            // var end = result.indexOf(']');
+            // //日期,股票代码,名称,开盘价,收盘价,最高价,最低价,前收盘,成交量,成交金额 date,open,close,high,low,volume,amount
+            // var regstr = new RegExp('"', "g");
+            // var str = result.substring(start + 1, end).replace(regstr, '')
+            // var dataList = str.split(',');
 
             var reg = new RegExp('-', "g");
             var reg1 = new RegExp(':', "g");
             var reg2 = new RegExp(' ', "g");
+            
+            var dataList = JSON.parse(result);
             var lastClose = 0;
             var list = [];
-            var distance = 8
-            for (var i = 0; i < dataList.length / distance; i++)
+            
+            //var distance = 8
+            
+            //for (var i = 0; i < dataList.length / distance; i++)
+            //f51,f52,f53,f54,f55,f56,f57,f61
+            //日期,开盘价,收盘价,最高价,最低价,前收盘,成交量,成交金额 
+            //dataList.data.diff[i]["f12"];
+            for (var i = 0; i < dataList.data.klines.length; i++)
             {
+                var tagList=dataList.data.klines[i].split(',');
                 if (i > 0)
                 {
-                    lastClose = dataList[(i - 1) * distance + 2];
+                    var pretagList=dataList.data.klines[i-1].split(',');
+
+                    lastClose = pretagList[2];
                 }
-                var date = dataList[i * distance].replace(reg, '').replace(reg1, '').replace(reg2, '').substring(0, 12);
-                var item = date + "," + ",," + dataList[i * distance + 2] + "," + dataList[i * distance + 3] + "," + dataList[i * distance + 4] + "," +
-                    dataList[i * distance + 1] + "," + lastClose + "," + dataList[i * distance + 5]  + "," + dataList[i * distance + 6] + "," + dataList[i * distance + 7];
+                var date = tagList[0].replace(reg, '').replace(reg1, '').replace(reg2, '').substring(0, 12);
+                var item = date + "," + ",," + tagList[2] + "," + tagList[3] + "," + tagList[4] + "," +
+                    tagList[1] + "," + lastClose + "," + tagList[5]  + "," + tagList[6] + "," + tagList[7];
                 list.push(item);
             }
             list.reverse();
+            curDataList=list;
             return list;
         });
     }

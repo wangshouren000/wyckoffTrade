@@ -6,6 +6,8 @@
 #include <QToolTip>
 #include <QMap>
 #include <QMouseEvent>
+#include <QDate>
+
 #include "cycledata.h"
 
 class QPaintKLine : public QWidget
@@ -42,8 +44,8 @@ public:
     int offSetHeight=100;//高度偏移量
 
     QColor  background; //背景颜色
-    int klineWith=20;//K线宽度
-    int klineDistance=10;//K线间距
+    int klineWith=15;//K线宽度
+    int klineDistance=6;//K线间距
     double scale=1;//缩放倍数
     struct KPosition
     {
@@ -52,7 +54,19 @@ public:
         int endY;
         CycleData data;
     };
-    QMap<int,KPosition> positionMap;
+    struct DotValue
+    {
+        int x;
+        int y;
+        QList<CycleData> datas;
+        bool isFill;
+        bool isUp;
+    };
+    QList<DotValue> dotValueList;
+
+    QMap<int,KPosition> positionMap;//添加K线信息到map 用于悬停显示
+    QMap<QString,int> lowHighPoint;
+    bool isConnectHighLow=false;
 protected:
     //绘图事件
     void paintEvent(QPaintEvent *event);

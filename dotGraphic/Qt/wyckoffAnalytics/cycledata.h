@@ -1,7 +1,7 @@
 #ifndef CYCLEDATA_H
 #define CYCLEDATA_H
 #include <QString>
-
+#include <stdio.h>
 
 class CycleData
 {

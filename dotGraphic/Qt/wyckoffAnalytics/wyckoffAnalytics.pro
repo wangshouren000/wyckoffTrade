@@ -3,13 +3,12 @@
 # Project created by QtCreator 2020-09-01T16:36:05
 #
 #-------------------------------------------------
-
-QT       += core gui
+QT       += core gui qml
 QT       += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = WyckoffAnalytics
+TARGET = wyckoffAnalytics
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -26,14 +25,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+    cycledata.cpp \
         main.cpp \
         mainwindow.cpp \
-    cycledata.cpp \
     qpaintkline.cpp
 
 HEADERS += \
-        mainwindow.h \
     cycledata.h \
+        mainwindow.h \
     qpaintkline.h
 
 FORMS += \
