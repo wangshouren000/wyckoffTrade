@@ -1,0 +1,8 @@
+{
+    "cycle":["month,20","week,5","day,240","120min,120","60min,60","30min,30","15min,15","5min,5","1min,1"],
+    "source":["东方财富","新浪"],
+    "get":
+        ["东方财富,0,getUrlOfStockListEastmoney|InitStockListEastmoney","东方财富,1,getUrlOfKlinesEastmoney|InitKlinesEastmoney","新浪,1,getUrlOfKlinesSina|InitKlinesSina"],
+    "formula":["横盘突破,f001,周期范围:20,比例:60",
+        "大涨小跌,f002,大范围:20,小范围:5,大比例:20,小比例:8"]
+}
